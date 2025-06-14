@@ -3,9 +3,10 @@ import {getServerSession} from "next-auth";
 import dbConnect from "@/lib/mongoose";
 import Bookmark from "@/models/Bookmark";
 import Word from "@/models/Word";
+import {authOptions} from "@/app/api/auth/[...nextauth]/route";
 
 export async function GET(){
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session || !session.user){
         return NextResponse.json({error: "Unauthorized"}, { status: 401});
     }

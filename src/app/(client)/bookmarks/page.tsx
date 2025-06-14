@@ -9,77 +9,14 @@ import {toast} from "sonner";
 import {Toaster} from "@/components/ui/sonner";
 import {WordCard} from "@/components/word-card";
 import {DictionaryEntry} from "@/lib/types";
+import {useBookmarks} from "@/hooks/use-bookmarks";
 
 
 export default function BookmarksPage() {
-    const { data: session, status } = useSession();
-    const [bookmarks, setBookmarks] = useState<DictionaryEntry[]>([]);
+    const {bookmarks} = useBookmarks()
+    // const [bookmarks, setBookmarks] = useState<DictionaryEntry[]>([]);
+    console.log(bookmarks)
 
-    const fetchBookmarks = async () => {
-        try {
-            if (status === "authenticated" && session?.user?.id) {
-                const res = await fetch("/api/bookmarks", {
-                    method: "GET",
-                    headers: { "Content-Type": "application/json" },
-                });
-                if (!res.ok) throw new Error("Failed to fetch bookmarks");
-                const data = await res.json();
-                setBookmarks(data.results || []);
-            } else {
-                const bookmarkIds = JSON.parse(localStorage.getItem("bookmarks") || "[]") as string[];
-                if (bookmarkIds.length === 0) {
-                    setBookmarks([]);
-                    return;
-                }
-                const res = await fetch("/api/words", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ ids: bookmarkIds }),
-                });
-                if (!res.ok) throw new Error("Failed to fetch bookmarked words");
-                const data = await res.json();
-                setBookmarks(data.results || []);
-            }
-        } catch (error) {
-            console.error("Error fetching bookmarks:", error);
-            toast.error("Failed to load bookmarks");
-        }
-    };
-
-    const removeBookmark = async (wordId: string) => {
-        try {
-            if (status === "authenticated" && session?.user?.id) {
-                const res = await fetch("/api/bookmarks/remove", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ wordId }),
-                });
-                if (!res.ok) throw new Error("Failed to remove bookmark");
-                await fetchBookmarks();
-                toast.success("Bookmark removed!");
-            } else {
-                const bookmarkIds = JSON.parse(localStorage.getItem("bookmarks") || "[]") as string[];
-                const updatedBookmarks = bookmarkIds.filter((id) => id !== wordId);
-                localStorage.setItem("bookmarks", JSON.stringify(updatedBookmarks));
-                setBookmarks((prev) => prev.filter((word) => word._id !== wordId));
-                toast.success("Bookmark removed!");
-            }
-        } catch (error) {
-            console.error("Error removing bookmark:", error);
-            toast.error("Failed to remove bookmark");
-        }
-    };
-
-    useEffect(() => {
-        fetchBookmarks();
-        const handleStorageChange = () => {
-            if (status !== "authenticated") {
-                fetchBookmarks();
-            }
-        };
-        window.addEventListener("storage", handleStorageChange);
-        return () => window.removeEventListener("storage", handleStorageChange);
-    }, [status, session]);
 
     return (
         <main className="min-h-screen container mx-auto">
@@ -88,7 +25,7 @@ export default function BookmarksPage() {
                 <Bookmark className="mr-2 h-6 w-6" />
                 <h1 className="text-2xl font-bold">Your Bookmarks</h1>
             </div>
-            <WordCard entry={bookmarks} />
+            {/*<WordCard entry={bookmarks} />*/}
 
             <Card className="w-full border-border">
                 <CardHeader>
