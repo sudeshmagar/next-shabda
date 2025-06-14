@@ -5,10 +5,10 @@ import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import dbConnect, { getMongoDbClient} from "@/lib/mongoose";
 import User from "@/models/User"
 import bcrypt from "bcryptjs";
-import { AuthOptions } from "next-auth";
+import type { NextAuthOptions } from "next-auth";
 
-export const authOptions: AuthOptions = {
-    adapter: MongoDBAdapter(getMongoDbClient()),
+export const authOptions: NextAuthOptions = {
+    adapter: MongoDBAdapter(await getMongoDbClient()),
     providers: [
         CredentialsProvider({
             credentials: {
@@ -22,7 +22,7 @@ export const authOptions: AuthOptions = {
                 await dbConnect();
                 const user = await User.findOne({ email: credentials.email });
 
-                if (user && bcrypt.compareSync(credentials.password, user.password)) {
+                if (user && await bcrypt.compare(credentials.password, user.password)) {
                     return { id: user._id.toString(), name: user.name, email: user.email };
                 }
                 return null;
@@ -34,9 +34,25 @@ export const authOptions: AuthOptions = {
         }),
     ],
     callbacks: {
-      session({session, user}){
-          if (session.user){
-              session.user.id = user.id;
+        async jwt({ token }) {
+            if (token?.email){
+                await dbConnect();
+                const dbUser = await User.findOne({ email: token.email });
+                if (dbUser) {
+                    token.id = dbUser._id.toString();
+                    token.picture = dbUser.image;
+                    token.role = dbUser.role ?? "user"; // Default to "user" if role is not set
+                }
+            }
+
+            return token;
+        },
+
+        async session({ session, token }) {
+          if (session.user && token.id) {
+              session.user.id = token.id as string;
+              session.user.image = token.picture as string;
+              session.user.role = token.role as string;
           }
           return session;
       }

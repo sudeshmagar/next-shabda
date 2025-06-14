@@ -4,16 +4,25 @@
 import {DictionaryEntry} from "@/lib/types";
 import {Card, CardContent, CardHeader} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
-import { Bookmark, Volume2} from "lucide-react";
+import {Bookmark, BookmarkCheck, Heart, Volume2} from "lucide-react";
 import {Badge} from "@/components/ui/badge";
+import {useBookmarks} from "@/hooks/use-bookmarks";
+import {useEffect, useState} from "react";
 
 interface WordCardProps {
-    entry: DictionaryEntry
+    entry: DictionaryEntry;
 }
+
 export function WordCard( {entry}: WordCardProps){
 
+
+    const {isBookmarked, toggleBookmark, bookmarks} = useBookmarks();
+    const [bookmarked, setBookmarked] = useState(false)
+
+
+
     //helper function to pair nepali and english senses
-    const getPairedSenses = (definition) => {
+    const getPairedSenses = (definition: { senses: { nepali?: string[]; english?: string[]}}) => {
         const nepaliSenses = definition.senses.nepali || [];
         const englishSenses = definition.senses.english || [];
         const maxLength = Math.max(nepaliSenses.length, englishSenses.length)
@@ -29,7 +38,7 @@ export function WordCard( {entry}: WordCardProps){
     }
 
     // Helper function to pair Nepali and English examples
-    const getPairedExamples = (definition) => {
+    const getPairedExamples = (definition: { examples?: { nepali?: string[]; english?: string[]}}) => {
         const nepaliExamples = definition.examples?.nepali || []
         const englishExamples = definition.examples?.english || []
         const maxLength = Math.max(nepaliExamples.length, englishExamples.length)
@@ -45,8 +54,18 @@ export function WordCard( {entry}: WordCardProps){
         return paired
     }
 
+    useEffect(() => {
+        const currentlyBookmarked = isBookmarked(entry._id);
+        setBookmarked(currentlyBookmarked);
+    }, [bookmarks, entry._id, isBookmarked]);
+
+    const handleToggleBookmark = async () => {
+        await toggleBookmark(entry._id);
+    }
+
+
     return (
-        <Card className="w-full h-fit border-border break-inside">
+        <Card className="w-full h-fit border-border">
             <CardHeader>
                 <div className="flex items-start justify-between">
                     <div className="flex flex-col gap-1">
@@ -64,8 +83,15 @@ export function WordCard( {entry}: WordCardProps){
                             </p>
                         )}
                     </div>
-                    <Button variant="ghost" size="sm" className="shrink-0">
-                        <Bookmark className="h-4 w-4" />
+                    <Button variant="ghost" size="sm" className="shrink-0" onClick={ handleToggleBookmark }>
+                        {/* Check if the entry is bookmarked */}
+                        {bookmarked? (<BookmarkCheck className={"h-5 w-5"} /> ): (<Bookmark className={"h-5 w-5"} /> )}
+                        {/*<Bookmark*/}
+                        {/*    className="h-5 w-5"*/}
+                        {/*    fill={isBookmarked ? "yellow" : "none"}*/}
+                        {/*    strokeWidth={isBookmarked? 0 : 2}*/}
+                        {/*    stroke="currentColor"*/}
+                        {/*/>*/}
                     </Button>
                 </div>
             </CardHeader>

@@ -9,7 +9,7 @@ export interface Examples {
 }
 
 export interface Definition {
-    id: string;
+    _id: string;
     grammar?: string;
     etymology?: string;
     senses: Senses;
@@ -17,7 +17,7 @@ export interface Definition {
 }
 
 export interface DictionaryEntry {
-    id: string;
+    _id: string;
     word?: string;
     english?: string;
     romanized?: string;
@@ -28,15 +28,18 @@ export interface DictionaryEntry {
     updatedAt?: Date;
 }
 
+
 export interface Bookmark {
     id: string;
-    entryId: string;
+    _id: string;
+    wordId: string;
+    userId: string;
     entry: DictionaryEntry;
     createdAt: Date;
 }
 
 export interface User {
-    id: string;
+    _id: string;
     email: string;
     name: string;
     password: string;

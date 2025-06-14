@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import {useState} from "react"
 import Link from "next/link"
-import { useAuth } from "@/hooks/use-auth"
-import { Book, Bookmark, User, LogOut, Menu, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import {useAuth} from "@/hooks/use-auth"
+import {Bookmark, LogOut, Menu, User, X} from "lucide-react"
+import {Button} from "@/components/ui/button"
 
 import {
     DropdownMenu,
@@ -14,10 +14,12 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {ModeToggle} from "@/components/dark-mode-toggle";
+import Image from "next/image";
 
 export function Header() {
-    const { user, logout, isAuthenticated } = useAuth()
+    const {user, logout, isAuthenticated} = useAuth()
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
 
     return (
         <header className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -35,18 +37,24 @@ export function Header() {
                         </Link>
                         <Link href="/bookmarks">
                             <Button variant="ghost">
-                                <Bookmark className="h-4 w-4 mr-2" />
+                                <Bookmark className="h-4 w-4 mr-2"/>
                                 Bookmarks
                             </Button>
                         </Link>
 
-                        <ModeToggle />
+                        <ModeToggle/>
 
                         {isAuthenticated ? (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" className="flex items-center space-x-2">
-                                        <User className="h-4 w-4" />
+                                        {user?.image ? (
+                                            <Image src={user.image} alt={"User Avatar"} width={24} height={24}
+                                                   className="rounded-full"/>
+                                        ) : (
+                                            <User className="h-4 w-4"/>
+                                        )}
+
                                         <span>{user?.name}</span>
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -54,14 +62,15 @@ export function Header() {
                                     <DropdownMenuItem asChild>
                                         <Link href="/add-word">Add Word</Link>
                                     </DropdownMenuItem>
+
                                     {user?.role === "admin" && (
                                         <DropdownMenuItem asChild>
-                                            <Link href="/admin">Admin</Link>
+                                            <Link href="/dashboard">Dashboard</Link>
                                         </DropdownMenuItem>
                                     )}
-                                    <DropdownMenuSeparator />
+                                    <DropdownMenuSeparator/>
                                     <DropdownMenuItem onClick={() => logout()}>
-                                        <LogOut className="h-4 w-4 mr-2" />
+                                        <LogOut className="h-4 w-4 mr-2"/>
                                         Sign Out
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -79,8 +88,9 @@ export function Header() {
                     </nav>
 
                     {/* Mobile Menu Button */}
-                    <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                        {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                    <Button variant="ghost" size="sm" className="md:hidden"
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                        {mobileMenuOpen ? <X className="h-5 w-5"/> : <Menu className="h-5 w-5"/>}
                     </Button>
                 </div>
 
@@ -94,14 +104,14 @@ export function Header() {
                         </Link>
                         <Link href="/bookmarks" onClick={() => setMobileMenuOpen(false)}>
                             <Button variant="ghost" className="w-full justify-start">
-                                <Bookmark className="h-4 w-4 mr-2" />
+                                <Bookmark className="h-4 w-4 mr-2"/>
                                 Bookmarks
                             </Button>
                         </Link>
 
                         <div className="flex items-center justify-between px-3 py-2">
                             <span className="text-sm">Theme</span>
-                            <ModeToggle />
+                            <ModeToggle/>
                         </div>
 
                         {isAuthenticated ? (
@@ -127,7 +137,7 @@ export function Header() {
                                         setMobileMenuOpen(false)
                                     }}
                                 >
-                                    <LogOut className="h-4 w-4 mr-2" />
+                                    <LogOut className="h-4 w-4 mr-2"/>
                                     Sign Out
                                 </Button>
                             </>

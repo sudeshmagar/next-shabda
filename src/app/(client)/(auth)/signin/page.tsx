@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,16 +12,22 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 
 export default function Page() {
     const router = useRouter();
     const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+
+    const searchParams =  useSearchParams();
+    const urlError = searchParams.get("error");
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError(null);
+        setLoading(true);
 
         const email = (e.currentTarget.email as HTMLInputElement).value;
         const password = (e.currentTarget.password as HTMLInputElement).value;
@@ -32,12 +38,20 @@ export default function Page() {
             redirect: false,
         });
 
+        setLoading(false);
+
         if (result?.error) {
             setError("Invalid email or password");
         } else {
-            router.push("/dashboard");
+            router.push("/");
         }
     };
+
+    useEffect(() => {
+        if (urlError === "CredentialsSignin") {
+            setError("Invalid email or password");
+        }
+    }, [urlError]);
 
     return (
         <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
@@ -86,15 +100,15 @@ export default function Page() {
                                         </div>
                                     )}
                                     <div className="flex flex-col gap-3">
-                                        <Button type="submit" className="w-full">
-                                            Login
+                                        <Button type="submit" className="w-full" disabled={loading}>
+                                            {loading ? "Logging in..." : "Login"}
                                         </Button>
                                         <Button
                                             variant="outline"
                                             className="w-full"
                                             type="button"
                                             onClick={() =>
-                                                signIn("google", { callbackUrl: "/dashboard" })
+                                                signIn("google", { callbackUrl: "/" })
                                             }
                                         >
                                             Login with Google
@@ -103,7 +117,7 @@ export default function Page() {
                                 </div>
                                 <div className="mt-4 text-center text-sm">
                                     Don&#39;t have an account?{" "}
-                                    <a
+                                    <Link
                                         href="/signup"
                                         className="underline underline-offset-4"
                                         onClick={(e) => {
@@ -112,7 +126,7 @@ export default function Page() {
                                         }}
                                     >
                                         Sign up
-                                    </a>
+                                    </Link>
                                 </div>
                             </form>
                         </CardContent>

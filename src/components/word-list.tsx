@@ -1,14 +1,19 @@
 "use client"
 
-import {DictionaryEntry} from "@/lib/types";
+import { DictionaryEntry,} from "@/lib/types";
 import {WordCard} from "@/components/word-card";
+import {motion} from "framer-motion";
+
+
 
 interface WordListProps {
     entries: DictionaryEntry[]
     loading?: boolean
 }
 
-export function WordList({entries, loading}: WordListProps){
+
+
+export function WordList({entries, loading }: WordListProps){
     if (loading){
         return (
             <div className="flex flex-col gap-4">
@@ -32,7 +37,18 @@ export function WordList({entries, loading}: WordListProps){
     return (
         <div className="masonry sm:masonry-sm md:masonry-md">
             {entries.map((entry) => (
-                <WordCard entry={entry} key={entry._id} />
+                <div key={entry._id} className="break-inside mb-6">
+                    <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.3, delay: 0.5 }}
+                    >
+                        <WordCard entry={entry} />
+                    </motion.div>
+                </div>
+
+
             ))}
         </div>
     )

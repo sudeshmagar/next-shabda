@@ -38,6 +38,8 @@ export function useAuth() {
         router.push("/")
     }
 
+    console.log("user", session?.user)
+
     return {
         user: session?.user,
         loading: status === "loading" || loading,
