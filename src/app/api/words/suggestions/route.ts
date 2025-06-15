@@ -1,22 +1,28 @@
-import {NextRequest, NextResponse} from "next/server";
-import {MongoClient} from "mongodb";
+import { NextRequest, NextResponse } from "next/server";
+import { MongoClient } from "mongodb";
 
-export default async function handler(req: NextRequest, res: NextResponse) {
-    if (req.method !== "GET") {
-        return res.status(405).json({error: "Method Not Allowed"});
-    }
-
-    const { query, limit = "8"} = req.query
+export async function GET(req: NextRequest) {
+    const { searchParams } = new URL(req.url);
+    const query = searchParams.get("q");
+    const limit = parseInt(searchParams.get("limit") || "8");
 
     if (!query || typeof query !== "string") {
-        return res.status(400).json({error: "Invalid query"});
+        return NextResponse.json({ error: "Invalid query" }, { status: 400 });
     }
 
     try {
         const client = await MongoClient.connect(process.env.MONGODB_URI as string);
-        const db = client
+        const db = client.db(); // uses default database from connection string
+        const words = await db.collection("words")
+            .find({ word: { $regex: `^${query}`, $options: "i" } })
+            .limit(limit)
+            .toArray();
+
+        await client.close();
+
+        return NextResponse.json(words);
     } catch (error) {
-        console.error("Error fetching suggestion: ", error)
-        res.status(500).json({error: "Server Error"});
+        console.error("Error fetching suggestions:", error);
+        return NextResponse.json({ error: "Server Error" }, { status: 500 });
     }
 }

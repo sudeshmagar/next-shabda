@@ -1,20 +1,19 @@
 "use client"
 
-import { DictionaryEntry,} from "@/lib/types";
+import {DictionaryEntry} from "@/lib/types";
 import {WordCard} from "@/components/word-card";
 import {motion} from "framer-motion";
-
-
+import dynamic from "next/dynamic";
 
 interface WordListProps {
-    entries: DictionaryEntry[]
-    loading?: boolean
+    entries: DictionaryEntry[];
+    loading?: boolean;
 }
 
+export function WordList({entries, loading}: WordListProps) {
+    const Masonry = dynamic(() => import('react-masonry-css'), { ssr: false})
 
-
-export function WordList({entries, loading }: WordListProps){
-    if (loading){
+    if (loading && entries.length === 0) {
         return (
             <div className="flex flex-col gap-4">
                 {[...Array(3)].map((_, index) => (
@@ -23,33 +22,53 @@ export function WordList({entries, loading }: WordListProps){
                     </div>
                 ))}
             </div>
-        )
+        );
     }
 
-    if (entries.length === 0){
+    if (entries.length === 0) {
         return (
             <div className="text-center py-8">
-                <p className="text-muted-foreground">No entries found. Try a different search term</p>
+                <p className="text-muted-foreground">No entries found. Try a different search term.</p>
             </div>
-        )
+        );
     }
 
     return (
-        <div className="masonry sm:masonry-sm md:masonry-md">
-            {entries.map((entry) => (
-                <div key={entry._id} className="break-inside mb-6">
+        <>
+            <Masonry breakpointCols={3}
+                     className="flex">
+                {entries.map((entry, index) => (
                     <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.3, delay: 0.5 }}
+                        key={entry._id || index}
+                        initial={{opacity: 0, y: 20}}
+                        whileInView={{opacity: 1, y: 0}}
+                        viewport={{once: true}}
+                        transition={{duration: 0.3}}
                     >
-                        <WordCard entry={entry} />
+                        <div className="p-2">
+                            <WordCard entry={entry}/>
+                        </div>
+
                     </motion.div>
-                </div>
+                ))}
+            </Masonry>
 
+            {/*<div ref={masonryContainer} className="grid items-start gap-4 sm:grid-cols-3 md:gap-6">*/}
+            {/*    {entries.map((entry, index) => (*/}
+            {/*        <motion.div*/}
+            {/*            key={entry._id || index}*/}
+            {/*            initial={{ opacity: 0, y: 20 }}*/}
+            {/*            whileInView={{ opacity: 1, y: 0 }}*/}
+            {/*            viewport={{ once: true }}*/}
+            {/*            transition={{ duration: 0.3 }}*/}
+            {/*        >*/}
+            {/*            <WordCard entry={entry} />*/}
+            {/*        </motion.div>*/}
+            {/*    ))}*/}
 
-            ))}
-        </div>
-    )
+            {/*</div>*/}
+
+        </>
+
+    );
 }

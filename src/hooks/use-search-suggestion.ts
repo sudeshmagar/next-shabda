@@ -8,8 +8,8 @@ export function useSearchSuggestions() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    const getSuggestions = useCallback((query: string) => {
-        if (!query.trim()) {
+    const getSuggestions = useCallback((query: string, filter?: string) => {
+        if (!query.trim() && !filter) {
             setSuggestions([])
             return
         }
@@ -18,10 +18,19 @@ export function useSearchSuggestions() {
         setError(null)
 
         // Debounce the search to avoid too many calls
-        const timeoutId = setTimeout(() => {
+        const timeoutId = setTimeout(async () => {
             try {
+                const params = new URLSearchParams({
+                    q: query.trim(),
+                    limit: "8",
+                })
+
+                if (filter) {
+                    params.append("startsWith", filter)
+                }
+
                 const response = await fetch(
-                    `/api/words/suggestions?q=${encodeURIComponent(query)}&limit=8`, {
+                    `/api/words/suggestions?${params.toString()}`, {
                         method: "GET",
                         headers: {
                             "Content-Type": "application/json",

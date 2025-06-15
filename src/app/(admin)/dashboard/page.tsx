@@ -1,161 +1,110 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import Link from "next/link";
+import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from "@/components/ui/table";
+import { toast } from "sonner";
+import { Trash, Pencil } from "lucide-react";
 
 export default function Dashboard() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    const [name, setName] = useState("");
-    const [editId, setEditId] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
 
-    const [words, setWords] = useState([])
+    const [words, setWords] = useState([]);
     const [search, setSearch] = useState("");
-    const [page, setPage] = useState(1);
-    const [limit, setLimit] = useState(10);
-
 
     useEffect(() => {
-        if (session) {
-            fetchItems();
+        if (status === "authenticated" && session?.user.role !== "admin") {
+            router.push("/");
         }
-    }, [session, search, page, limit]);
+    }, [session, status]);
 
-    const fetchItems = async () => {
-        const res = await fetch("/api/words", {
-            method: "POST",
-            headers: { "Content-type": "application/json" },
-            body: JSON.stringify({search,limit, page})
-        });
-        const data  = await res.json();
-        setWords(data.results || [])
-    };
+    useEffect(() => {
+        fetchWords();
+    }, [search]);
 
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError(null);
-        const res = await fetch("/api/items", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name }),
-        });
-        if (res.ok) {
-            setName("");
-            fetchItems();
-        } else {
-            setError("Failed to create item");
+    const fetchWords = async () => {
+        try {
+            const res = await fetch("/api/words", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ search, limit: 100, page: 1 }),
+            });
+            const data = await res.json();
+            setWords(data.results || []);
+        } catch (e) {
+            toast.error("Failed to load words");
         }
     };
 
-    const handleUpdate = async (id: string, newName: string) => {
-        setError(null);
-        const res = await fetch(`/api/items/${id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: newName }),
-        });
-        if (res.ok) {
-            setEditId(null);
-            fetchItems();
-        } else {
-            setError("Failed to update item");
+    const deleteWord = async (id: string) => {
+        try {
+            const confirmed = confirm("Are you sure you want to delete this word?");
+            if (!confirmed) return;
+
+            const res = await fetch(`/api/words/${id}`, {
+                method: "DELETE",
+            });
+            if (!res.ok) throw new Error();
+            toast.success("Word deleted successfully");
+            fetchWords();
+        } catch (e) {
+            toast.error("Failed to delete word");
         }
     };
-
-    const handleDelete = async (id: string) => {
-        setError(null);
-        const res = await fetch(`/api/words/${id}`, {
-            method: "DELETE",
-        });
-        if (res.ok) {
-            fetchItems();
-        } else {
-            setError("Failed to delete item");
-        }
-    };
-
-    if (status === "loading") {
-        return <p>Loading...</p>;
-    }
-
-    if (!session) {
-        router.push("/signin");
-        return null;
-    }
 
     return (
-        <div className="p-6 md:p-10">
-            <h1 className="text-2xl font-bold mb-4">Welcome, {session?.user?.name}</h1>
-            <Button
-                variant="outline"
-                onClick={() => signOut({ callbackUrl: "/" })}
-                className="mb-6"
-            >
-                Sign out
-            </Button>
-            {error && (
-                <div className="text-sm text-red-500 text-center mb-4">{error}</div>
-            )}
-            <div className={cn("mb-6")}>
-                <h2 className="text-xl font-semibold mb-2">Create Item</h2>
-                <form onSubmit={handleCreate} className="flex flex-col gap-4 max-w-sm">
-                    <div className="grid gap-2">
-                        <Label htmlFor="name">Item Name</Label>
-                        <Input
-                            id="name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder="Item name"
-                            required
-                        />
-                    </div>
-                    <Button type="submit">Create</Button>
-                </form>
+        <div className="container mx-auto py-10">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+                <Link href="/dashboard/new">
+                    <Button>Add New Word</Button>
+                </Link>
             </div>
-            <div>
-                <h2 className="text-xl font-semibold mb-2">Items</h2>
-                <ul className="space-y-4">
-                    {words.map((item: any) => (
-                        <li key={item._id} className="flex items-center gap-4">
-                            {editId === item._id ? (
-                                <Input
-                                    type="text"
-                                    defaultValue={item.name}
-                                    onBlur={(e) => handleUpdate(item._id, e.target.value)}
-                                    autoFocus
-                                    className="max-w-xs"
-                                />
-                            ) : (
-                                <>
-                                    <span>{item.word}</span>
-                                    <Link href={`/src/app/(client)/edit/${item._id}`}>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                    >
-                                        Edit
+
+            <div className="mb-4">
+                <Input
+                    placeholder="Search words..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+            </div>
+
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Word</TableHead>
+                        <TableHead>English</TableHead>
+                        <TableHead>Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {words.map((word: any) => (
+                        <TableRow key={word._id}>
+                            <TableCell>{word.word}</TableCell>
+                            <TableCell>{word.english}</TableCell>
+                            <TableCell className="space-x-2">
+                                <Link href={`/dashboard/edit/${word._id}`}>
+                                    <Button size="icon" variant="outline">
+                                        <Pencil className="h-4 w-4" />
                                     </Button>
-                                    </Link>
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() => handleDelete(item._id)}
-                                    >
-                                        Delete
-                                    </Button>
-                                </>
-                            )}
-                        </li>
+                                </Link>
+                                <Button
+                                    size="icon"
+                                    variant="destructive"
+                                    onClick={() => deleteWord(word._id)}
+                                >
+                                    <Trash className="h-4 w-4" />
+                                </Button>
+                            </TableCell>
+                        </TableRow>
                     ))}
-                </ul>
-            </div>
+                </TableBody>
+            </Table>
         </div>
     );
 }

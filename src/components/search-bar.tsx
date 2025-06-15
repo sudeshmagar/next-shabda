@@ -1,22 +1,23 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { SearchSuggestions } from "./search-suggestions"
-import { useSearchSuggestions } from "@/hooks/use-search-suggestions"
+import {useSearchSuggestions} from "@/hooks/use-search-suggestion";
 import type { DictionaryEntry } from "@/lib/types"
+import {SearchSuggestions} from "@/components/search-suggestion";
 
 interface SearchBarProps {
     onSearch: (query: string) => void
     loading?: boolean
 }
 
+const filterLetters = ["क", "ख", "ग", "घ", "ङ", "च", "छ", "ज", "झ", "ञ"];
+
 export function SearchBar({ onSearch, loading }: SearchBarProps) {
     const [query, setQuery] = useState("")
+    const [filter, setFilter] = useState<string | null>(null)
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [isFocused, setIsFocused] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
@@ -26,11 +27,11 @@ export function SearchBar({ onSearch, loading }: SearchBarProps) {
 
     // Handle input changes and get suggestions
     useEffect(() => {
-        const cleanup = getSuggestions(query)
-        setShowSuggestions(isFocused && query.trim().length > 0)
+        const cleanup = getSuggestions(query, filter)
+        setShowSuggestions(isFocused && (query.trim().length > 0 || filter !== null))
 
         return cleanup
-    }, [query, isFocused, getSuggestions])
+    }, [query, isFocused, filter, getSuggestions])
 
     // Handle clicks outside to close suggestions
     useEffect(() => {
@@ -55,14 +56,16 @@ export function SearchBar({ onSearch, loading }: SearchBarProps) {
     }
 
     const handleSuggestionSelect = (entry: DictionaryEntry) => {
-        setQuery(entry.nepali)
-        onSearch(entry.nepali)
+        setQuery(entry.word)
+        setFilter(null)
+        onSearch(entry.word)
         setShowSuggestions(false)
         inputRef.current?.blur()
     }
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setQuery(e.target.value)
+        setFilter(null)
     }
 
     const handleInputFocus = () => {
@@ -74,6 +77,7 @@ export function SearchBar({ onSearch, loading }: SearchBarProps) {
 
     const handleClearSearch = () => {
         setQuery("")
+        setFilter(null)
         setShowSuggestions(false)
         clearSuggestions()
         inputRef.current?.focus()

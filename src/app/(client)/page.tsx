@@ -4,8 +4,6 @@ import {useSession} from "next-auth/react";
 import Link from "next/link";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import {Input} from "@/components/ui/input";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {
     Pagination,
     PaginationContent,
@@ -17,26 +15,45 @@ import {ArrowRight, Calendar, RefreshCw, Search, Star} from "lucide-react";
 import {toast} from "sonner";
 import {Toaster} from "@/components/ui/sonner";
 import {WordList} from "@/components/word-list";
-import {Bookmark, DictionaryEntry, ExtendedDictionaryEntry} from "@/lib/types";
+import {Bookmark, DictionaryEntry} from "@/lib/types";
 import {Badge} from "@/components/ui/badge";
-import bookmark from "@/models/Bookmark";
+import {SearchBar} from "@/components/search-bar";
 
 
 export default function HomePage() {
     const {data: session, status} = useSession();
 
-    const [words, setWords] = useState<ExtendedDictionaryEntry[]>([]);
+    const [words, setWords] = useState<DictionaryEntry[]>([]);
     const [search, setSearch] = useState("");
     const [limit, setLimit] = useState(10);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [suggestionResults, setSuggestionResults] = useState<DictionaryEntry[]>()
 
 
-    const [wordOfTheDay, setWordOfTheDay] = useState<ExtendedDictionaryEntry | null>(null);
+    const [wordOfTheDay, setWordOfTheDay] = useState<DictionaryEntry | null>(null);
     const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
 
     const [loading, setLoading] = useState(false)
     const [refreshing, setRefreshing] = useState(false)
+
+    const handleSearch = async (query: string) => {
+        if (!query.trim().length) {
+            setSuggestionResults([])
+            return
+        }
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/words/suggestions?q=${encodeURIComponent(query)}&limit=20`)
+            const data: DictionaryEntry[] = await res.json();
+            setSuggestionResults(data);
+        } catch (e) {
+            console.error("Search error:", e);
+            setSuggestionResults([])
+        } finally {
+            setLoading(false);
+        }
+    }
 
     // Fetch Words
     useEffect(() => {
@@ -100,112 +117,6 @@ export default function HomePage() {
         return () => clearInterval(interval);
     }, []);
 
-    // Fetch Bookmarks
-    const fetchBookmarks = async () => {
-        try {
-            if (status === "authenticated" && session?.user?.id) {
-                const res = await fetch("api/bookmarks");
-                const data = await res.json();
-                setBookmarks(data.results || []);
-            } else {
-                const ids = JSON.parse(localStorage.getItem("bookmarks") || "[]") as string[];
-                if (ids.length > 0) {
-                    const res = await fetch('/api/words', {
-                        method: "POST",
-                        headers: {"Content-Type": "application/json"},
-                        body: JSON.stringify({ids}),
-                    });
-                    const data = await res.json();
-                    setBookmarks(data.results || []);
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching bookmarks:", error);
-            toast.error("Failed to load bookmarks");
-        }
-    };
-
-    // add bookmark
-    const addBookmark = async ( wordId: string) => {
-        try {
-            if (status === "authenticated") {
-                await fetch("/api/bookmarks/add", {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({wordId}),
-                })
-                toast.success("Bookmark added successfully.");
-                await fetchBookmarks(); // Refresh bookmarks
-            } else {
-                const bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]");
-                if (!bookmarks.includes(wordId)) {
-                    bookmarks.push(wordId);
-                    localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
-                    toast.success("Bookmark saved locally.");
-                    await fetchBookmarks(); // Refresh bookmarks
-                } else {
-                    toast.error("This word is already bookmarked.");
-                }
-            }
-        } catch (e) {
-            toast.error("Failed to add bookmark");
-            console.error("Error adding bookmark:", e);
-        }
-    }
-
-    // toggle bookmark
-    const toggleBookmark = async ( wordId: string ) => {
-        const isBookmarked = bookmarks.some((b) => b.id === wordId);
-        if (!isBookmarked) {
-            await addBookmark(wordId);
-        } else {
-            //remove bookmark
-            if (status === "authenticated") {
-                await fetch("/api/bookmarks/remove", {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({wordId}),
-                })
-            } else {
-                const local = JSON.parse(localStorage.getItem("bookmarks") || "[]");
-                localStorage.setItem("bookmarks", JSON.stringify(local.filter((id: string) => id !== wordId)));
-            }
-            toast.success("Bookmark removed successfully.");
-            await fetchBookmarks();
-        }
-    }
-
-    //  Bookmark
-    useEffect(() => {
-
-
-        fetchBookmarks();
-
-        //sync localStorage bookmarks to MongoDB on login
-        if (status === "authenticated" && session?.user.id) {
-            const localBookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]") as string[];
-            if (localBookmarks.length) {
-                localBookmarks.forEach(async (wordId: string) => {
-                    await fetch("/api/bookmarks/add", {
-                        method: "POST",
-                        headers: {"Content-Type": "application/json"},
-                        body: JSON.stringify({wordId}),
-                    })
-                })
-                localStorage.removeItem("bookmarks");
-                fetchBookmarks();
-            }
-        }
-        const syncStorage = () => {
-            if (status !== "authenticated") fetchBookmarks();
-        }
-
-        window.addEventListener("storage", syncStorage)
-        return () => {
-            window.removeEventListener("storage", syncStorage);
-        };
-    }, [status, session]);
-
 
     return (
         <main className="min-h-screen flex flex-col gap-5">
@@ -219,40 +130,45 @@ export default function HomePage() {
             </section>
 
             {/* Search and Filters */}
+            {/*<section className="container mx-auto">*/}
+            {/*    <div className="flex flex-col sm:flex-row items-center gap-4">*/}
+            {/*        <div className="relative flex-1">*/}
+            {/*            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"/>*/}
+            {/*            <Input*/}
+            {/*                placeholder="Search by Nepali, Romanized, or English..."*/}
+            {/*                value={search}*/}
+            {/*                onChange={(e) => {*/}
+            {/*                    setPage(1);*/}
+            {/*                    setSearch(e.target.value);*/}
+            {/*                }}*/}
+            {/*                className="pl-10 shadow-sm"*/}
+            {/*            />*/}
+            {/*        </div>*/}
+            {/*        <Select*/}
+            {/*            value={limit.toString()}*/}
+            {/*            onValueChange={(value) => {*/}
+            {/*                setLimit(Number(value));*/}
+            {/*                setPage(1);*/}
+            {/*            }}*/}
+            {/*        >*/}
+            {/*            <SelectTrigger className="w-[120px] bg-white border-blue-200">*/}
+            {/*                <SelectValue placeholder="Show 10"/>*/}
+            {/*            </SelectTrigger>*/}
+            {/*            <SelectContent>*/}
+            {/*                {[10, 20, 50, 100].map((num) => (*/}
+            {/*                    <SelectItem key={num} value={num.toString()}>*/}
+            {/*                        Show {num}*/}
+            {/*                    </SelectItem>*/}
+            {/*                ))}*/}
+            {/*            </SelectContent>*/}
+            {/*        </Select>*/}
+            {/*    </div>*/}
+            {/*</section>*/}
+
             <section className="container mx-auto">
-                <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"/>
-                        <Input
-                            placeholder="Search by Nepali, Romanized, or English..."
-                            value={search}
-                            onChange={(e) => {
-                                setPage(1);
-                                setSearch(e.target.value);
-                            }}
-                            className="pl-10 shadow-sm"
-                        />
-                    </div>
-                    <Select
-                        value={limit.toString()}
-                        onValueChange={(value) => {
-                            setLimit(Number(value));
-                            setPage(1);
-                        }}
-                    >
-                        <SelectTrigger className="w-[120px] bg-white border-blue-200">
-                            <SelectValue placeholder="Show 10"/>
-                        </SelectTrigger>
-                        <SelectContent>
-                            {[10, 20, 50, 100].map((num) => (
-                                <SelectItem key={num} value={num.toString()}>
-                                    Show {num}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
+                <SearchBar onSearch={handleSearch} loading={loading}/>
             </section>
+
 
             {/* Word of the Day */}
             { (wordOfTheDay && search === "") && (
@@ -351,7 +267,7 @@ export default function HomePage() {
 
 
             <section className="container mx-auto">
-                <WordList entries={words} loading={loading} bookmarks={bookmarks} addBookmark={addBookmark}/>
+                <WordList entries={words} loading={loading} />
             </section>
 
 

@@ -169,6 +169,13 @@
     .break-inside {
         break-inside: avoid;
     }
+    .grid-masonry-horizontal {
+        display: grid;
+        grid-auto-rows: max-content;
+        grid-auto-flow: row dense;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+    }
 }
 
 
