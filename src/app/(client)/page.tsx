@@ -127,7 +127,7 @@ export default function HomePage() {
         } else {
             // Calculate the range of pages to show
             let startPage = Math.max(1, page - 2);
-            let endPage = Math.min(totalPages, startPage + 4);
+            const endPage = Math.min(totalPages, startPage + 4);
 
             // Adjust start page if we're near the end
             if (endPage === totalPages) {
