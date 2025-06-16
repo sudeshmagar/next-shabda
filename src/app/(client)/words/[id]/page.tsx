@@ -216,7 +216,8 @@ export default function WordDetailPage() {
                             <CardHeader className="pb-3">
                                 <CardTitle className="text-lg">
                                     <div className="flex items-center gap-3">
-                                        <Badge variant="outline" className="h-7 px-3 text-base">{index + 1}</Badge>
+                                        {word.definitions && word.definitions.length > 1 && (<Badge variant="outline" className="h-7 px-3 text-base">{index + 1}</Badge>)}
+
                                         {definition.grammar && (
                                             <Badge variant="secondary" className="h-7 px-3">{definition.grammar}</Badge>
                                         )}

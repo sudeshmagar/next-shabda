@@ -1,13 +1,13 @@
 "use client"
 
 
-import {DictionaryEntry} from "@/lib/types";
-import {Card, CardContent, CardHeader} from "@/components/ui/card";
-import {Button} from "@/components/ui/button";
-import {Bookmark, BookmarkCheck, Volume2} from "lucide-react";
-import {Badge} from "@/components/ui/badge";
-import {useBookmarks} from "@/hooks/use-bookmarks";
-import {useEffect, useState} from "react";
+import { DictionaryEntry } from "@/lib/types";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Bookmark, BookmarkCheck, Volume2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useBookmarks } from "@/hooks/use-bookmarks";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 interface WordCardProps {
@@ -15,10 +15,10 @@ interface WordCardProps {
     onRemoveBookmark?: (wordId: string) => Promise<void>;
 }
 
-export function WordCard({entry, onRemoveBookmark}: WordCardProps) {
+export function WordCard({ entry, onRemoveBookmark }: WordCardProps) {
 
 
-    const {isBookmarked, toggleBookmark, bookmarks} = useBookmarks();
+    const { isBookmarked, toggleBookmark, bookmarks } = useBookmarks();
     const [bookmarked, setBookmarked] = useState(false)
 
 
@@ -78,41 +78,39 @@ export function WordCard({entry, onRemoveBookmark}: WordCardProps) {
 
     return (
 
-            <Card className="w-full h-fit border-border">
-                <CardHeader>
-                    <div className="flex items-start justify-between">
-                        <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                                <h3 className="text-2xl font-bold">{entry.word}</h3>
-                                <Button variant="ghost" size="sm" onClick={() => speakWord(entry?.phonetic || "")} title="Speak Word"
-                                        className="p-1"
-                                >
-                                    <Volume2 className="h-4 w-4"/>
-                                </Button>
-                            </div>
-                            <p className="text-lg text-muted-foreground">{entry.english}</p>
-                            {entry.romanized && (
-                                <p className="text-sm text-muted-foreground">
-                                    <span className="font-medium">Romanized:</span> {entry.romanized}
-                                </p>
-                            )}
+        <Card className="w-full h-fit border-border">
+            <CardHeader>
+                <div className="flex items-start justify-between">
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-2xl font-bold">{entry.word}</h3>
+                            <Button variant="ghost" size="sm" onClick={() => speakWord(entry?.phonetic || "")} title="Speak Word"
+                                className="p-1"
+                            >
+                                <Volume2 className="h-4 w-4" />
+                            </Button>
                         </div>
-                        <Button variant="ghost" size="sm" className="shrink-0" onClick={handleToggleBookmark}>
-                            {/* Check if the entry is bookmarked */}
-                            {bookmarked ? (<BookmarkCheck className={"h-5 w-5 text-primary"}/>) : (
-                                <Bookmark className={"h-5 w-5"}/>)}
-                        </Button>
+                        <p className="text-lg text-muted-foreground">{entry.english}</p>
+                        {entry.romanized && (
+                            <p className="text-sm text-muted-foreground">
+                                <span className="font-medium">Romanized:</span> {entry.romanized}
+                            </p>
+                        )}
                     </div>
-                </CardHeader>
-                <Link href="/words/[id]" as={`/words/${entry._id}`} className="no-underline">
+                    <Button variant="ghost" size="sm" className="shrink-0" onClick={handleToggleBookmark}>
+                        {/* Check if the entry is bookmarked */}
+                        {bookmarked ? (<BookmarkCheck className={"h-5 w-5 text-primary"} />) : (
+                            <Bookmark className={"h-5 w-5"} />)}
+                    </Button>
+                </div>
+            </CardHeader>
+            <Link href="/words/[id]" as={`/words/${entry._id}`} className="no-underline">
                 <CardContent>
                     <div className="flex flex-col gap-6">
                         {entry.definitions?.map((definition, index) => (
                             <div key={index}>
                                 <div className="flex items-center gap-2">
-                                    <Badge variant="outline">
-                                        {index + 1}
-                                    </Badge>
+                                    {entry.definitions && entry.definitions.length > 1 && (<Badge variant="outline" className="h-7 px-3 text-base">{index + 1}</Badge>)}
                                     {definition.grammar && (
                                         <Badge variant="secondary">
                                             {definition.grammar}
@@ -164,8 +162,8 @@ export function WordCard({entry, onRemoveBookmark}: WordCardProps) {
                         ))}
                     </div>
                 </CardContent>
-                </Link>
-            </Card>
+            </Link>
+        </Card>
 
     )
 }

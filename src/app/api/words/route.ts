@@ -28,7 +28,7 @@ export async function POST(req: Request) {
         if (ids && Array.isArray(ids) && ids.length > 0) {
             query = { _id: { $in: ids } };
         } else if (search.trim()) {
-            const regex = new RegExp(search, "i");
+            const regex = new RegExp(`^${search}`, "i");
             query = {
                 $or: [
                     { word: { $regex: regex } },
