@@ -6,8 +6,23 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+type Definition = {
+    grammar: string;
+    etymology: string;
+    senses: { nepali: string[]; english: string[] };
+    examples: { nepali: string[]; english: string[] };
+};
+
+interface WordForm {
+    word: string;
+    romanized: string;
+    phonetic?: string;
+    english: string;
+    definitions: Definition[];
+}
+
 export default function NewWordPage() {
-    const [form, setForm] = useState({
+    const [form, setForm] = useState<WordForm>({
         word: "",
         romanized: "",
         phonetic: "",
@@ -23,14 +38,18 @@ export default function NewWordPage() {
     });
     const router = useRouter();
 
-    const handleFieldChange = (field: string, value: any) => {
-        setForm((prev: any) => ({ ...prev, [field]: value }));
+    const handleFieldChange = (field: keyof WordForm, value: string) => {
+        setForm((prev) => ({ ...prev, [field]: value }));
     };
 
-    const handleDefinitionChange = (defIndex: number, field: string, value: any) => {
-        const definitions = [...form.definitions];
-        definitions[defIndex][field] = value;
-        setForm({ ...form, definitions });
+    const handleDefinitionChange = (defIndex: number, field: keyof Definition, value: string) => {
+        setForm((prev) => {
+            const definitions = [...prev.definitions];
+            if (field === "grammar" || field === "etymology") {
+                (definitions[defIndex][field] as string) = value;
+            }
+            return { ...prev, definitions };
+        });
     };
 
     const handleNestedArrayChange = (
@@ -42,7 +61,13 @@ export default function NewWordPage() {
     ) => {
         const updated = [...form.definitions];
         updated[defIndex][field][lang][index] = value;
-        setForm({ ...form, definitions: updated });
+        setForm({
+            word: form.word,
+            romanized: form.romanized,
+            phonetic: form.phonetic,
+            english: form.english,
+            definitions: updated,
+        });
     };
 
     const addItem = (
@@ -52,7 +77,13 @@ export default function NewWordPage() {
     ) => {
         const updated = [...form.definitions];
         updated[defIndex][field][lang].push("");
-        setForm({ ...form, definitions: updated });
+        setForm({
+            word: form.word,
+            romanized: form.romanized,
+            phonetic: form.phonetic,
+            english: form.english,
+            definitions: updated,
+        });
     };
 
     const removeItem = (
@@ -63,20 +94,26 @@ export default function NewWordPage() {
     ) => {
         const updated = [...form.definitions];
         updated[defIndex][field][lang].splice(index, 1);
-        setForm({ ...form, definitions: updated });
+        setForm({
+            word: form.word,
+            romanized: form.romanized,
+            phonetic: form.phonetic,
+            english: form.english,
+            definitions: updated,
+        });
     };
 
     const addNewDefinition = () => {
-        const newDef = {
+        const newDef: Definition = {
             grammar: "",
             etymology: "",
             senses: { nepali: [""], english: [""] },
             examples: { nepali: [""], english: [""] },
         };
-        setForm((prev: any) => ({ ...prev, definitions: [...prev.definitions, newDef] }));
+        setForm((prev) => ({ ...prev, definitions: [...prev.definitions, newDef] }));
     };
 
-    const handleSubmit = async (e: any) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         await fetch("/api/words", {
             method: "PUT",

@@ -1,6 +1,5 @@
 "use client";
-import {useEffect, useState} from "react";
-import {useSession} from "next-auth/react";
+import {useEffect, useState, useCallback} from "react";
 import Link from "next/link";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
@@ -11,75 +10,65 @@ import {
     PaginationNext,
     PaginationPrevious
 } from "@/components/ui/pagination";
-import {ArrowRight, Calendar, RefreshCw, Search, Star} from "lucide-react";
+import {ArrowRight, Calendar, RefreshCw, Star} from "lucide-react";
 import {toast} from "sonner";
 import {Toaster} from "@/components/ui/sonner";
 import {WordList} from "@/components/word-list";
-import {Bookmark, DictionaryEntry} from "@/lib/types";
+import { DictionaryEntry} from "@/lib/types";
 import {Badge} from "@/components/ui/badge";
 import {SearchBar} from "@/components/search-bar";
 
 
 export default function HomePage() {
-    const {data: session, status} = useSession();
 
     const [words, setWords] = useState<DictionaryEntry[]>([]);
+    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
-    const [limit, setLimit] = useState(10);
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [suggestionResults, setSuggestionResults] = useState<DictionaryEntry[]>()
-
-
+    const [hasMore, setHasMore] = useState(true);
+    const [total, setTotal] = useState(0);
+    const [refreshing, setRefreshing] = useState(false);
     const [wordOfTheDay, setWordOfTheDay] = useState<DictionaryEntry | null>(null);
-    const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
 
-    const [loading, setLoading] = useState(false)
-    const [refreshing, setRefreshing] = useState(false)
-
-    const handleSearch = async (query: string) => {
-        if (!query.trim().length) {
-            setSuggestionResults([])
-            return
-        }
-        setLoading(true);
-        try {
-            const res = await fetch(`/api/words/suggestions?q=${encodeURIComponent(query)}&limit=20`)
-            const data: DictionaryEntry[] = await res.json();
-            setSuggestionResults(data);
-        } catch (e) {
-            console.error("Search error:", e);
-            setSuggestionResults([])
-        } finally {
-            setLoading(false);
-        }
-    }
+    const handleSearch = useCallback(async (query: string) => {
+        setSearch(query);
+        setPage(1);
+        setWords([]);
+        setHasMore(true);
+    }, []);
 
     // Fetch Words
     useEffect(() => {
         const fetchWords = async () => {
             try {
-                setLoading(true)
+                setLoading(true);
                 const response = await fetch("/api/words", {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({search, limit, page}),
+                    body: JSON.stringify({search, limit: 10, page}),
                 });
-                if (!response.ok) throw new Error("Failed to fetch words");
+                
+                if (!response.ok) {
+                    throw new Error("Failed to fetch words");
+                }
+                
                 const data = await response.json();
                 setWords(data.results || []);
-                setTotalPages(data.pages || 1);
-                setLoading(false)
+                setTotal(data.total || 0);
+                setHasMore(data.hasMore || false);
             } catch (error) {
                 console.error("Error fetching words:", error);
                 toast.error("Failed to load words");
+                setWords([]);
+                setTotal(0);
+                setHasMore(false);
             } finally {
-                setLoading(false)
+                setLoading(false);
             }
         };
-        fetchWords();
-    }, [search, page, limit]);
 
+        fetchWords();
+    }, [search, page]);
 
     // Fetch Word of the Day + Daily Refresh
     useEffect(() => {
@@ -117,113 +106,98 @@ export default function HomePage() {
         return () => clearInterval(interval);
     }, []);
 
+    // Handle page change
+    const handlePageChange = (newPage: number) => {
+        if (newPage >= 1 && newPage <= Math.ceil(total / 10)) {
+            setPage(newPage);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
 
     return (
-        <main className="min-h-screen flex flex-col gap-5">
+        <main className="min-h-screen flex flex-col gap-8 py-8">
             <Toaster position="top-right"/>
+            
             {/* Hero Section */}
-            <section className="container mx-auto flex flex-col gap-3 items-center p-5">
-                <h1 className="text-4xl font-bold">शब्द</h1>
-                <h3 className="text-xl">Nepali dictionary</h3>
-                <p>Search for Nepali and English words. Create an account to bookmark your favorite words and add new
-                    entries</p>
+            <section className="container mx-auto flex flex-col gap-4 items-center text-center px-4 max-w-3xl">
+                <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">शब्द</h1>
+                <h3 className="text-2xl font-medium text-muted-foreground">Nepali Dictionary</h3>
+                <p className="text-lg text-muted-foreground max-w-2xl">Search for Nepali and English words. Create an account to bookmark your favorite words and add new entries.</p>
             </section>
 
-            {/* Search and Filters */}
-            {/*<section className="container mx-auto">*/}
-            {/*    <div className="flex flex-col sm:flex-row items-center gap-4">*/}
-            {/*        <div className="relative flex-1">*/}
-            {/*            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"/>*/}
-            {/*            <Input*/}
-            {/*                placeholder="Search by Nepali, Romanized, or English..."*/}
-            {/*                value={search}*/}
-            {/*                onChange={(e) => {*/}
-            {/*                    setPage(1);*/}
-            {/*                    setSearch(e.target.value);*/}
-            {/*                }}*/}
-            {/*                className="pl-10 shadow-sm"*/}
-            {/*            />*/}
-            {/*        </div>*/}
-            {/*        <Select*/}
-            {/*            value={limit.toString()}*/}
-            {/*            onValueChange={(value) => {*/}
-            {/*                setLimit(Number(value));*/}
-            {/*                setPage(1);*/}
-            {/*            }}*/}
-            {/*        >*/}
-            {/*            <SelectTrigger className="w-[120px] bg-white border-blue-200">*/}
-            {/*                <SelectValue placeholder="Show 10"/>*/}
-            {/*            </SelectTrigger>*/}
-            {/*            <SelectContent>*/}
-            {/*                {[10, 20, 50, 100].map((num) => (*/}
-            {/*                    <SelectItem key={num} value={num.toString()}>*/}
-            {/*                        Show {num}*/}
-            {/*                    </SelectItem>*/}
-            {/*                ))}*/}
-            {/*            </SelectContent>*/}
-            {/*        </Select>*/}
-            {/*    </div>*/}
-            {/*</section>*/}
-
-            <section className="container mx-auto">
+            {/* Search Section */}
+            <section className="container mx-auto px-4 max-w-3xl">
                 <SearchBar onSearch={handleSearch} loading={loading}/>
             </section>
 
-
-            {/* Word of the Day */}
-            { (wordOfTheDay && search === "") && (
-                <section className="container mx-auto">
-                    {wordOfTheDay && (
-                        <Card className="bg-card border-border text-card-foreground">
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <Star className="h-5 w-5"/>
-                                        <CardTitle>Word of the Day</CardTitle>
-                                    </div>
-                                    <div className="flex item-center gap-2">
-                                        <Badge variant="outline" className="border-border">
-                                            <Calendar className="h-3 w-3"/>
-                                            Today
-                                        </Badge>
-                                        <Button variant="outline" size="sm" className={"border-border"}>
-                                            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}/>
-                                        </Button>
-                                    </div>
-
+            {/* Word of the Day - Only show when not searching */}
+            {!search.trim() && wordOfTheDay && (
+                <section className="container mx-auto px-4 max-w-4xl">
+                    <Card className="bg-card border-border shadow-lg">
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Star className="h-5 w-5 text-primary"/>
+                                    <CardTitle className="text-2xl">Word of the Day</CardTitle>
                                 </div>
-                            </CardHeader>
-                            <CardContent>
-                                <Link href={`/words/${wordOfTheDay._id}`} className="block group">
-                                    <h2 className="text-3xl font-bold ">
-                                        {wordOfTheDay.word}
-                                    </h2>
-                                    <p className="text-lg  italic">{wordOfTheDay.romanized}</p>
-                                    <p className=" mt-2 font-medium">{wordOfTheDay.english}</p>
+                                <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="border-border px-3 py-1">
+                                        <Calendar className="h-4 w-4 mr-1"/>
+                                        Today
+                                    </Badge>
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="border-border rounded-full hover:bg-primary/10"
+                                        onClick={() => {
+                                            setRefreshing(true);
+                                            // Add your refresh logic here
+                                            setTimeout(() => setRefreshing(false), 1000);
+                                        }}
+                                    >
+                                        <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}/>
+                                    </Button>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <Link href={`/words/${wordOfTheDay._id}`} className="block group">
+                                <div className="space-y-4">
+                                    <div>
+                                        <h2 className="text-4xl font-bold tracking-tight group-hover:text-primary transition-colors">
+                                            {wordOfTheDay.word}
+                                        </h2>
+                                        <p className="text-xl text-muted-foreground mt-1">{wordOfTheDay.romanized}</p>
+                                        <p className="text-lg text-muted-foreground mt-2">{wordOfTheDay.english}</p>
+                                    </div>
+                                    
                                     {wordOfTheDay.definitions?.map((definition, index) => (
-                                        <div key={index}>
+                                        <div key={index} className="space-y-3">
                                             <div className="flex items-center gap-2">
-                                                <Badge variant="outline">
+                                                <Badge variant="outline" className="h-7 px-3">
                                                     {index + 1}
                                                 </Badge>
                                                 {definition.grammar && (
-                                                    <Badge variant="secondary">
+                                                    <Badge variant="secondary" className="h-7 px-3">
                                                         {definition.grammar}
                                                     </Badge>
                                                 )}
-                                                {definition.etymology && <span className="text-xs text-muted-foreground">{definition.etymology}</span>}
+                                                {definition.etymology && (
+                                                    <span className="text-sm text-muted-foreground italic">
+                                                        {definition.etymology}
+                                                    </span>
+                                                )}
                                             </div>
-                                            <div className="flex flex-col gap-2 mt-2">
-                                                {/*paired senses*/}
+                                            <div className="space-y-3">
                                                 {definition.senses && Object.keys(definition.senses).length > 0 && (
                                                     <div>
-                                                        <h4 className="font-semibold mb-1 text-primary">अर्थ (Meanings)</h4>
-                                                        <ul className="space-y-1">
+                                                        <h4 className="text-lg font-semibold text-primary mb-2">अर्थ (Meanings)</h4>
+                                                        <ul className="space-y-2 list-none">
                                                             {Object.entries(definition.senses).map(([lang, senses], idx) => (
-                                                                <li key={idx} className="text-muted-foreground">
-                                                                    {senses.map((sense, j) => (
-                                                                        <div key={j} className="font-medium">
-                                                                            • {sense}
+                                                                <li key={idx} className="relative pl-6 before:content-['•'] before:absolute before:left-0 before:text-primary">
+                                                                    {(senses as string[]).map((sense: string, j: number) => (
+                                                                        <div key={j} className="text-base">
+                                                                            {sense}
                                                                         </div>
                                                                     ))}
                                                                 </li>
@@ -233,13 +207,13 @@ export default function HomePage() {
                                                 )}
                                                 {definition.examples && Object.keys(definition.examples).length > 0 && (
                                                     <div>
-                                                        <h4 className="font-semibold mb-1 text-primary">उदाहरण (Examples)</h4>
-                                                        <ul className="space-y-1">
+                                                        <h4 className="text-lg font-semibold text-primary mb-2">उदाहरण (Examples)</h4>
+                                                        <ul className="space-y-2 list-none">
                                                             {Object.entries(definition.examples).map(([lang, examples], idx) => (
-                                                                <li key={idx} className="text-muted-foreground italic">
-                                                                    {examples.map((example, j) => (
-                                                                        <div key={j} className="pl-4">
-                                                                            • {example}
+                                                                <li key={idx} className="relative pl-6 before:content-['•'] before:absolute before:left-0 before:text-primary">
+                                                                    {(examples as string[]).map((example: string, j: number) => (
+                                                                        <div key={j} className="text-base">
+                                                                            {example}
                                                                         </div>
                                                                     ))}
                                                                 </li>
@@ -251,48 +225,44 @@ export default function HomePage() {
                                         </div>
                                     ))}
 
-
-                                    <Button variant="link" className="mt-4  p-0">
+                                    <Button 
+                                        variant="link" 
+                                        className="mt-4 p-0 text-primary hover:text-primary/80 group-hover:translate-x-1 transition-transform"
+                                    >
                                         Explore Word <ArrowRight className="ml-2 h-4 w-4"/>
                                     </Button>
-                                </Link>
-                            </CardContent>
-                        </Card>
-                    )}
-
+                                </div>
+                            </Link>
+                        </CardContent>
+                    </Card>
                 </section>
             )}
 
-
-
-
-            <section className="container mx-auto">
+            {/* Search Results */}
+            <section className="container mx-auto px-4 max-w-4xl">
                 <WordList entries={words} loading={loading} />
             </section>
 
-
-
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-                <section className="max-w-6xl mx-auto px-6 py-8">
+            {/* Pagination - Only show when we have results */}
+            {total > 0 && (
+                <section className="container mx-auto px-4 max-w-4xl">
                     <Pagination>
                         <PaginationContent>
                             <PaginationItem>
                                 <PaginationPrevious
-                                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                    className={page === 1 ? "pointer-events-none opacity-50" : "hover:bg-blue-100"}
+                                    onClick={() => handlePageChange(page - 1)}
+                                    className={page === 1 ? "pointer-events-none opacity-50" : "hover:bg-primary/10"}
                                 />
                             </PaginationItem>
                             <PaginationItem>
-                                <span className="text-gray-600 font-medium">
-                                    Page {page} of {totalPages}
+                                <span className="text-muted-foreground font-medium">
+                                    Page {page} of {Math.ceil(total / 10)}
                                 </span>
                             </PaginationItem>
                             <PaginationItem>
                                 <PaginationNext
-                                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                                    className={page === totalPages ? "pointer-events-none opacity-50" : "hover:bg-blue-100"}
+                                    onClick={() => handlePageChange(page + 1)}
+                                    className={page === Math.ceil(total / 10) ? "pointer-events-none opacity-50" : "hover:bg-primary/10"}
                                 />
                             </PaginationItem>
                         </PaginationContent>

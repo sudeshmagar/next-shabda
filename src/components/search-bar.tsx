@@ -7,16 +7,17 @@ import { Button } from "@/components/ui/button"
 import {useSearchSuggestions} from "@/hooks/use-search-suggestion";
 import type { DictionaryEntry } from "@/lib/types"
 import {SearchSuggestions} from "@/components/search-suggestion";
+import { useDebounce } from "@/hooks/use-debounce"
+
 
 interface SearchBarProps {
     onSearch: (query: string) => void
     loading?: boolean
 }
 
-const filterLetters = ["क", "ख", "ग", "घ", "ङ", "च", "छ", "ज", "झ", "ञ"];
-
 export function SearchBar({ onSearch, loading }: SearchBarProps) {
     const [query, setQuery] = useState("")
+    const [debouncedQuery] = useDebounce(query, 300)
     const [filter, setFilter] = useState<string | null>(null)
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [isFocused, setIsFocused] = useState(false)
@@ -27,7 +28,7 @@ export function SearchBar({ onSearch, loading }: SearchBarProps) {
 
     // Handle input changes and get suggestions
     useEffect(() => {
-        const cleanup = getSuggestions(query, filter)
+        const cleanup = getSuggestions(query, filter || "")
         setShowSuggestions(isFocused && (query.trim().length > 0 || filter !== null))
 
         return cleanup
@@ -45,6 +46,10 @@ export function SearchBar({ onSearch, loading }: SearchBarProps) {
         document.addEventListener("mousedown", handleClickOutside)
         return () => document.removeEventListener("mousedown", handleClickOutside)
     }, [])
+
+    useEffect(() => {
+        onSearch(debouncedQuery)
+    }, [debouncedQuery, onSearch])
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()

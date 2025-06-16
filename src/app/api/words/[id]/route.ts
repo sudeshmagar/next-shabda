@@ -19,7 +19,7 @@ export async function PUT( req: Request, {params} : { params: { id: string } }) 
         const updated = await Word.findByIdAndUpdate(params.id, body, {new: true});
         if (!updated) return NextResponse.json({ error: "Not found"}, { status: 404 });
         return NextResponse.json(updated);
-    } catch (error) {
+    } catch {
         return NextResponse.json({error: "Update failed"}, {status: 400});
     }
 }

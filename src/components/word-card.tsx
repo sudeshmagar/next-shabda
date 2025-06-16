@@ -12,9 +12,10 @@ import Link from "next/link";
 
 interface WordCardProps {
     entry: DictionaryEntry;
+    onRemoveBookmark?: (wordId: string) => Promise<void>;
 }
 
-export function WordCard({entry}: WordCardProps) {
+export function WordCard({entry, onRemoveBookmark}: WordCardProps) {
 
 
     const {isBookmarked, toggleBookmark, bookmarks} = useBookmarks();
@@ -38,21 +39,21 @@ export function WordCard({entry}: WordCardProps) {
     }
 
     // Helper function to pair Nepali and English examples
-    const getPairedExamples = (definition: { examples?: { nepali?: string[]; english?: string[] } }) => {
-        const nepaliExamples = definition.examples?.nepali || []
-        const englishExamples = definition.examples?.english || []
-        const maxLength = Math.max(nepaliExamples.length, englishExamples.length)
+    // const getPairedExamples = (definition: { examples?: { nepali?: string[]; english?: string[] } }) => {
+    //     const nepaliExamples = definition.examples?.nepali || []
+    //     const englishExamples = definition.examples?.english || []
+    //     const maxLength = Math.max(nepaliExamples.length, englishExamples.length)
 
-        const paired = []
-        for (let i = 0; i < maxLength; i++) {
-            paired.push({
-                nepali: nepaliExamples[i] || "",
-                english: englishExamples[i] || "",
-            })
-        }
+    //     const paired = []
+    //     for (let i = 0; i < maxLength; i++) {
+    //         paired.push({
+    //             nepali: nepaliExamples[i] || "",
+    //             english: englishExamples[i] || "",
+    //         })
+    //     }
 
-        return paired
-    }
+    //     return paired
+    // }
 
     useEffect(() => {
         const currentlyBookmarked = isBookmarked(entry._id);
@@ -60,12 +61,15 @@ export function WordCard({entry}: WordCardProps) {
     }, [bookmarks, entry._id, isBookmarked]);
 
     const handleToggleBookmark = async () => {
-        await toggleBookmark(entry._id);
+        if (bookmarked && onRemoveBookmark) {
+            await onRemoveBookmark(entry._id);
+        } else {
+            await toggleBookmark(entry._id);
+        }
     }
 
-    const speakWord = (entry: { word: string, phonetic?: string; romanized?: string }) => {
-        const spokenText = entry.word.match(/[अ-ह]/) ? entry.word : entry.romanized || entry.word;
-        const utterance = new SpeechSynthesisUtterance(entry.phonetic);
+    const speakWord = (phonetic?: string) => {
+        const utterance = new SpeechSynthesisUtterance(phonetic);
         utterance.lang = "en-US"; // Set language to Nepali
 
         window.speechSynthesis.speak(utterance);
@@ -80,7 +84,7 @@ export function WordCard({entry}: WordCardProps) {
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2">
                                 <h3 className="text-2xl font-bold">{entry.word}</h3>
-                                <Button variant="ghost" size="sm" onClick={() => speakWord(entry)} title="Speak Word"
+                                <Button variant="ghost" size="sm" onClick={() => speakWord(entry?.phonetic || "")} title="Speak Word"
                                         className="p-1"
                                 >
                                     <Volume2 className="h-4 w-4"/>
@@ -95,7 +99,7 @@ export function WordCard({entry}: WordCardProps) {
                         </div>
                         <Button variant="ghost" size="sm" className="shrink-0" onClick={handleToggleBookmark}>
                             {/* Check if the entry is bookmarked */}
-                            {bookmarked ? (<BookmarkCheck className={"h-5 w-5"}/>) : (
+                            {bookmarked ? (<BookmarkCheck className={"h-5 w-5 text-primary"}/>) : (
                                 <Bookmark className={"h-5 w-5"}/>)}
                         </Button>
                     </div>
@@ -123,14 +127,14 @@ export function WordCard({entry}: WordCardProps) {
                                     {getPairedSenses(definition).length > 0 && (
                                         <div>
                                             <h4 className="font-semibold mb-2 text-primary">अर्थ (Meanings)</h4>
-                                            <ul className="space-y-3">
+                                            <ul className="space-y-3 list-disc list-outside pl-4">
                                                 {getPairedSenses(definition).map((pair, idx) => (
                                                     <li key={idx} className="text-muted-foreground">
                                                         {pair.nepali &&
-                                                            <div className="font-medium">• {pair.nepali}</div>}
+                                                            <div className="font-medium">{pair.nepali}</div>}
                                                         {pair.english && (
                                                             <div
-                                                                className="pl-4 text-sm italic text-muted-foreground">{pair.english}</div>
+                                                                className=" text-sm italic text-muted-foreground">{pair.english}</div>
                                                         )}
                                                     </li>
                                                 ))}

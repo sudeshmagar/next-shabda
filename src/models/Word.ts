@@ -1,4 +1,4 @@
-import {model, models, Schema} from "mongoose";
+import mongoose, {model, Schema} from "mongoose";
 
 const WordSchema = new Schema({
         word: String,
@@ -25,4 +25,4 @@ const WordSchema = new Schema({
     }
 );
 
-export default models.Word || model("Word", WordSchema);
+export default mongoose.models.Word || model("Word", WordSchema);

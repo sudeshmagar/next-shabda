@@ -8,9 +8,10 @@ import dynamic from "next/dynamic";
 interface WordListProps {
     entries: DictionaryEntry[];
     loading?: boolean;
+    onRemoveBookmark?: (wordId: string) => Promise<void>;
 }
 
-export function WordList({entries, loading}: WordListProps) {
+export function WordList({entries, loading, onRemoveBookmark}: WordListProps) {
     const Masonry = dynamic(() => import('react-masonry-css'), { ssr: false})
 
     if (loading && entries.length === 0) {
@@ -35,7 +36,7 @@ export function WordList({entries, loading}: WordListProps) {
 
     return (
         <>
-            <Masonry breakpointCols={3}
+            <Masonry breakpointCols={2}
                      className="flex">
                 {entries.map((entry, index) => (
                     <motion.div
@@ -46,7 +47,7 @@ export function WordList({entries, loading}: WordListProps) {
                         transition={{duration: 0.3}}
                     >
                         <div className="p-2">
-                            <WordCard entry={entry}/>
+                            <WordCard entry={entry} onRemoveBookmark={onRemoveBookmark}/>
                         </div>
 
                     </motion.div>

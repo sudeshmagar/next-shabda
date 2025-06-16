@@ -18,7 +18,7 @@ export interface Definition {
 
 export interface DictionaryEntry {
     _id: string;
-    word?: string;
+    word: string;
     english?: string;
     romanized?: string;
     phonetic?: string;
@@ -44,5 +44,6 @@ export interface User {
     name: string;
     password: string;
     role?: "user" | "admin";
+    image?: string;
     createdAt: Date;
 }

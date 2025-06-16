@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MongoClient } from "mongodb";
+import dbConnect from "@/lib/mongoose";
+import Word from "@/models/Word";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -11,14 +12,22 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const client = await MongoClient.connect(process.env.MONGODB_URI as string);
-        const db = client.db(); // uses default database from connection string
-        const words = await db.collection("words")
-            .find({ word: { $regex: `^${query}`, $options: "i" } })
-            .limit(limit)
-            .toArray();
-
-        await client.close();
+        await dbConnect();
+        
+        // Create a regex pattern that matches the query anywhere in the text
+        const regex = new RegExp(query, "i");
+        
+        // Search across multiple fields
+        const words = await Word.find({
+            $or: [
+                { word: { $regex: regex } },
+                { english: { $regex: regex } },
+                { romanized: { $regex: regex } }
+            ]
+        })
+        .sort({ word: 1 })
+        .limit(limit)
+        .lean();
 
         return NextResponse.json(words);
     } catch (error) {

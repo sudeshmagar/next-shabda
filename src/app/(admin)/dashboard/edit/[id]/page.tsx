@@ -6,26 +6,63 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+type Definition = {
+    grammar: string;
+    etymology: string;
+    senses: { nepali: string[]; english: string[] };
+    examples: { nepali: string[]; english: string[] };
+};
+
+interface WordForm {
+    word: string;
+    romanized: string;
+    phonetic?: string;
+    english: string;
+    definitions: Definition[];
+}
+
 export default function EditWordPage() {
     const { id } = useParams();
     const router = useRouter();
-    const [form, setForm] = useState<any>(null);
+    const [form, setForm] = useState<WordForm | null>(null);
 
     useEffect(() => {
         if (!id) return;
         fetch(`/api/words/${id}`)
             .then((res) => res.json())
-            .then((data) => setForm(data));
+            .then((data) => {
+                setForm({
+                    word: data.word || "",
+                    romanized: data.romanized || "",
+                    phonetic: data.phonetic || "",
+                    english: data.english || "",
+                    definitions: (data.definitions || []).map((def: any) => ({
+                        grammar: def.grammar || "",
+                        etymology: def.etymology || "",
+                        senses: {
+                            nepali: (def.senses?.nepali || [""]).map((s: string) => s || ""),
+                            english: (def.senses?.english || [""]).map((s: string) => s || ""),
+                        },
+                        examples: {
+                            nepali: (def.examples?.nepali || [""]).map((e: string) => e || ""),
+                            english: (def.examples?.english || [""]).map((e: string) => e || ""),
+                        },
+                    })),
+                });
+            });
     }, [id]);
 
-    const handleFieldChange = (field: string, value: any) => {
-        setForm((prev: any) => ({ ...prev, [field]: value }));
+    const handleFieldChange = (field: keyof WordForm, value: string) => {
+        setForm((prev) => prev ? { ...prev, [field]: value } : prev);
     };
 
-    const handleDefinitionChange = (defIndex: number, field: string, value: any) => {
-        setForm((prev: any) => {
+    const handleDefinitionChange = (defIndex: number, field: keyof Definition, value: string) => {
+        setForm((prev) => {
+            if (!prev) return prev;
             const definitions = [...prev.definitions];
-            definitions[defIndex][field] = value;
+            if (field === "grammar" || field === "etymology") {
+                (definitions[defIndex][field] as string) = value;
+            }
             return { ...prev, definitions };
         });
     };
@@ -37,9 +74,16 @@ export default function EditWordPage() {
         value: string,
         index: number
     ) => {
+        if (!form) return;
         const updated = [...form.definitions];
         updated[defIndex][field][lang][index] = value;
-        setForm({ ...form, definitions: updated });
+        setForm({
+            word: form.word,
+            romanized: form.romanized,
+            phonetic: form.phonetic,
+            english: form.english,
+            definitions: updated,
+        });
     };
 
     const addItem = (
@@ -47,9 +91,16 @@ export default function EditWordPage() {
         field: "senses" | "examples",
         lang: "nepali" | "english"
     ) => {
+        if (!form) return;
         const updated = [...form.definitions];
         updated[defIndex][field][lang].push("");
-        setForm({ ...form, definitions: updated });
+        setForm({
+            word: form.word,
+            romanized: form.romanized,
+            phonetic: form.phonetic,
+            english: form.english,
+            definitions: updated,
+        });
     };
 
     const removeItem = (
@@ -58,9 +109,16 @@ export default function EditWordPage() {
         lang: "nepali" | "english",
         index: number
     ) => {
+        if (!form) return;
         const updated = [...form.definitions];
         updated[defIndex][field][lang].splice(index, 1);
-        setForm({ ...form, definitions: updated });
+        setForm({
+            word: form.word,
+            romanized: form.romanized,
+            phonetic: form.phonetic,
+            english: form.english,
+            definitions: updated,
+        });
     };
 
     const addNewDefinition = () => {

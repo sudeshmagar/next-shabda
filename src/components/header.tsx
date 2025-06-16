@@ -22,7 +22,7 @@ export function Header() {
 
 
     return (
-        <header className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header className="sticky top-0 z-100 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container mx-auto px-4">
                 <div className="flex h-16 items-center justify-between">
                     <Link href="/" className="flex items-center space-x-2">
@@ -60,7 +60,7 @@ export function Header() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem asChild>
-                                        <Link href="/add-word">Add Word</Link>
+                                        <Link href="/profile">Profile</Link>
                                     </DropdownMenuItem>
 
                                     {user?.role === "admin" && (
@@ -117,15 +117,15 @@ export function Header() {
                         {isAuthenticated ? (
                             <>
                                 <div className="px-3 py-2 text-sm font-medium">{user?.name}</div>
-                                <Link href="/add-word" onClick={() => setMobileMenuOpen(false)}>
+                                <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
                                     <Button variant="ghost" className="w-full justify-start">
-                                        Add Word
+                                        Profile
                                     </Button>
                                 </Link>
                                 {user?.role === "admin" && (
-                                    <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
+                                    <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
                                         <Button variant="ghost" className="w-full justify-start">
-                                            Admin
+                                            Dashboard
                                         </Button>
                                     </Link>
                                 )}

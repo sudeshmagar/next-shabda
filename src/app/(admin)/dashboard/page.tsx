@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -9,25 +9,22 @@ import { Input } from "@/components/ui/input";
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Trash, Pencil } from "lucide-react";
+import { DictionaryEntry } from "@/lib/types";
 
 export default function Dashboard() {
     const { data: session, status } = useSession();
     const router = useRouter();
 
-    const [words, setWords] = useState([]);
+    const [words, setWords] = useState<DictionaryEntry[]>([]);
     const [search, setSearch] = useState("");
 
     useEffect(() => {
         if (status === "authenticated" && session?.user.role !== "admin") {
             router.push("/");
         }
-    }, [session, status]);
+    }, [session, status, router]);
 
-    useEffect(() => {
-        fetchWords();
-    }, [search]);
-
-    const fetchWords = async () => {
+    const fetchWords = useCallback(async () => {
         try {
             const res = await fetch("/api/words", {
                 method: "POST",
@@ -36,10 +33,14 @@ export default function Dashboard() {
             });
             const data = await res.json();
             setWords(data.results || []);
-        } catch (e) {
+        } catch {
             toast.error("Failed to load words");
         }
-    };
+    }, [search]);
+
+    useEffect(() => {
+        fetchWords();
+    }, [fetchWords]);
 
     const deleteWord = async (id: string) => {
         try {
@@ -52,7 +53,7 @@ export default function Dashboard() {
             if (!res.ok) throw new Error();
             toast.success("Word deleted successfully");
             fetchWords();
-        } catch (e) {
+        } catch {
             toast.error("Failed to delete word");
         }
     };
@@ -83,7 +84,7 @@ export default function Dashboard() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {words.map((word: any) => (
+                    {words.map((word: DictionaryEntry) => (
                         <TableRow key={word._id}>
                             <TableCell>{word.word}</TableCell>
                             <TableCell>{word.english}</TableCell>
