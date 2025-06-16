@@ -10,10 +10,29 @@ export interface Examples {
 
 export interface Definition {
     _id: string;
-    grammar?: string;
-    etymology?: string;
-    senses: Senses;
-    examples?: Examples;
+    grammar: string;
+    etymology: string;
+    senses: {
+        nepali: string[];
+        english: string[];
+    };
+    examples: {
+        nepali: string[];
+        english: string[];
+    };
+}
+
+export interface FormDefinition {
+    grammar: string;
+    etymology: string;
+    senses: {
+        nepali: string[];
+        english: string[];
+    };
+    examples: {
+        nepali: string[];
+        english: string[];
+    };
 }
 
 export interface DictionaryEntry {
@@ -27,7 +46,6 @@ export interface DictionaryEntry {
     createdAt?: Date;
     updatedAt?: Date;
 }
-
 
 export interface Bookmark {
     id: string;
@@ -47,3 +65,18 @@ export interface User {
     image?: string;
     createdAt: Date;
 }
+
+export interface WordForm {
+    word: string;
+    romanized: string;
+    phonetic?: string;
+    english: string;
+    definitions: FormDefinition[];
+}
+
+export interface ApiWordResponse extends DictionaryEntry {
+    definitions: Definition[];
+}
+
+export type Language = 'nepali' | 'english';
+export type DefinitionField = 'senses' | 'examples';

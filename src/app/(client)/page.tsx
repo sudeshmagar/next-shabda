@@ -25,7 +25,6 @@ export default function HomePage() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
     const [total, setTotal] = useState(0);
     const [refreshing, setRefreshing] = useState(false);
     const [wordOfTheDay, setWordOfTheDay] = useState<DictionaryEntry | null>(null);
@@ -34,7 +33,6 @@ export default function HomePage() {
         setSearch(query);
         setPage(1);
         setWords([]);
-        setHasMore(true);
     }, []);
 
     // Fetch Words
@@ -55,13 +53,11 @@ export default function HomePage() {
                 const data = await response.json();
                 setWords(data.results || []);
                 setTotal(data.total || 0);
-                setHasMore(data.hasMore || false);
             } catch (error) {
                 console.error("Error fetching words:", error);
                 toast.error("Failed to load words");
                 setWords([]);
                 setTotal(0);
-                setHasMore(false);
             } finally {
                 setLoading(false);
             }
@@ -189,33 +185,35 @@ export default function HomePage() {
                                                 )}
                                             </div>
                                             <div className="space-y-3">
-                                                {definition.senses && Object.keys(definition.senses).length > 0 && (
+                                                {definition.senses && (
                                                     <div>
                                                         <h4 className="text-lg font-semibold text-primary mb-2">अर्थ (Meanings)</h4>
                                                         <ul className="space-y-2 list-none">
-                                                            {Object.entries(definition.senses).map(([lang, senses], idx) => (
+                                                            {definition.senses.nepali?.map((sense, idx) => (
                                                                 <li key={idx} className="relative pl-6 before:content-['•'] before:absolute before:left-0 before:text-primary">
-                                                                    {(senses as string[]).map((sense: string, j: number) => (
-                                                                        <div key={j} className="text-base">
-                                                                            {sense}
+                                                                    <div className="text-base">{sense}</div>
+                                                                    {definition.senses.english?.[idx] && (
+                                                                        <div className="text-sm text-muted-foreground italic pl-4 border-l-2 border-border">
+                                                                            {definition.senses.english[idx]}
                                                                         </div>
-                                                                    ))}
+                                                                    )}
                                                                 </li>
                                                             ))}
                                                         </ul>
                                                     </div>
                                                 )}
-                                                {definition.examples && Object.keys(definition.examples).length > 0 && (
+                                                {definition.examples && (
                                                     <div>
                                                         <h4 className="text-lg font-semibold text-primary mb-2">उदाहरण (Examples)</h4>
                                                         <ul className="space-y-2 list-none">
-                                                            {Object.entries(definition.examples).map(([lang, examples], idx) => (
+                                                            {definition.examples.nepali?.map((example, idx) => (
                                                                 <li key={idx} className="relative pl-6 before:content-['•'] before:absolute before:left-0 before:text-primary">
-                                                                    {(examples as string[]).map((example: string, j: number) => (
-                                                                        <div key={j} className="text-base">
-                                                                            {example}
+                                                                    <div className="text-base">{example}</div>
+                                                                    {definition.examples.english?.[idx] && (
+                                                                        <div className="text-sm text-muted-foreground italic pl-4 border-l-2 border-border">
+                                                                            {definition.examples.english[idx]}
                                                                         </div>
-                                                                    ))}
+                                                                    )}
                                                                 </li>
                                                             ))}
                                                         </ul>

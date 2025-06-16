@@ -1,5 +1,7 @@
 import NextAuth from "next-auth";
 
+type UserRole = "user" | "admin"
+
 declare module "next-auth" {
     interface Session {
         user: {
@@ -7,7 +9,7 @@ declare module "next-auth" {
             name?: string | null;
             email?: string | null;
             image?: string | null;
-            role?: string | null;
+            role?: UserRole;
         }
     }
 

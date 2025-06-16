@@ -5,21 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-type Definition = {
-    grammar: string;
-    etymology: string;
-    senses: { nepali: string[]; english: string[] };
-    examples: { nepali: string[]; english: string[] };
-};
-
-interface WordForm {
-    word: string;
-    romanized: string;
-    phonetic?: string;
-    english: string;
-    definitions: Definition[];
-}
+import { Definition, FormDefinition, WordForm, ApiWordResponse, Language, DefinitionField } from "@/lib/types";
 
 export default function EditWordPage() {
     const { id } = useParams();
@@ -30,22 +16,22 @@ export default function EditWordPage() {
         if (!id) return;
         fetch(`/api/words/${id}`)
             .then((res) => res.json())
-            .then((data) => {
+            .then((data: ApiWordResponse) => {
                 setForm({
                     word: data.word || "",
                     romanized: data.romanized || "",
                     phonetic: data.phonetic || "",
                     english: data.english || "",
-                    definitions: (data.definitions || []).map((def: any) => ({
+                    definitions: (data.definitions || []).map((def: Definition) => ({
                         grammar: def.grammar || "",
                         etymology: def.etymology || "",
                         senses: {
-                            nepali: (def.senses?.nepali || [""]).map((s: string) => s || ""),
-                            english: (def.senses?.english || [""]).map((s: string) => s || ""),
+                            nepali: (def.senses?.nepali || [""]).map((s) => s || ""),
+                            english: (def.senses?.english || [""]).map((s) => s || ""),
                         },
                         examples: {
-                            nepali: (def.examples?.nepali || [""]).map((e: string) => e || ""),
-                            english: (def.examples?.english || [""]).map((e: string) => e || ""),
+                            nepali: (def.examples?.nepali || [""]).map((e) => e || ""),
+                            english: (def.examples?.english || [""]).map((e) => e || ""),
                         },
                     })),
                 });
@@ -69,8 +55,8 @@ export default function EditWordPage() {
 
     const handleNestedArrayChange = (
         defIndex: number,
-        field: "senses" | "examples",
-        lang: "nepali" | "english",
+        field: DefinitionField,
+        lang: Language,
         value: string,
         index: number
     ) => {
@@ -78,67 +64,70 @@ export default function EditWordPage() {
         const updated = [...form.definitions];
         updated[defIndex][field][lang][index] = value;
         setForm({
-            word: form.word,
-            romanized: form.romanized,
-            phonetic: form.phonetic,
-            english: form.english,
+            ...form,
             definitions: updated,
         });
     };
 
     const addItem = (
         defIndex: number,
-        field: "senses" | "examples",
-        lang: "nepali" | "english"
+        field: DefinitionField,
+        lang: Language
     ) => {
         if (!form) return;
         const updated = [...form.definitions];
         updated[defIndex][field][lang].push("");
         setForm({
-            word: form.word,
-            romanized: form.romanized,
-            phonetic: form.phonetic,
-            english: form.english,
+            ...form,
             definitions: updated,
         });
     };
 
     const removeItem = (
         defIndex: number,
-        field: "senses" | "examples",
-        lang: "nepali" | "english",
+        field: DefinitionField,
+        lang: Language,
         index: number
     ) => {
         if (!form) return;
         const updated = [...form.definitions];
         updated[defIndex][field][lang].splice(index, 1);
         setForm({
-            word: form.word,
-            romanized: form.romanized,
-            phonetic: form.phonetic,
-            english: form.english,
+            ...form,
             definitions: updated,
         });
     };
 
     const addNewDefinition = () => {
-        const newDef = {
+        const newDef: FormDefinition = {
             grammar: "",
             etymology: "",
             senses: { nepali: [""], english: [""] },
             examples: { nepali: [""], english: [""] },
         };
-        setForm((prev: any) => ({ ...prev, definitions: [...prev.definitions, newDef] }));
+        setForm((prev) => prev ? { ...prev, definitions: [...prev.definitions, newDef] } : prev);
     };
 
-    const handleSubmit = async (e: any) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        await fetch(`/api/words/${id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(form),
-        });
-        router.push("/dashboard");
+        if (!form) return;
+        
+        try {
+            const response = await fetch(`/api/words/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(form),
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to update word');
+            }
+            
+            router.push("/dashboard");
+        } catch (error) {
+            console.error('Error updating word:', error);
+            // You might want to show a toast or error message here
+        }
     };
 
     if (!form) return <p className="p-6">Loading...</p>;
@@ -180,7 +169,7 @@ export default function EditWordPage() {
                             />
                         </div>
 
-                        {form.definitions.map((def: any, defIndex: number) => (
+                        {form.definitions.map((def, defIndex) => (
                             <div key={defIndex} className="border p-4 rounded-md space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium mb-1">Grammar</label>

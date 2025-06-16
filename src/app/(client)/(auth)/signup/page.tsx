@@ -22,9 +22,10 @@ export default function Page() {
         e.preventDefault();
         setError(null);
 
-        const email = (e.currentTarget.email as HTMLInputElement).value;
-        const password = (e.currentTarget.password as HTMLInputElement).value;
-        const name = (e.currentTarget.name as HTMLInputElement).value;
+        const formData = new FormData(e.currentTarget)
+        const email = formData.get("email") as string;
+        const password = formData.get("password") as string;
+        const name = formData.get("name") as string;
 
         const res = await fetch("/api/auth/register", {
             method: "POST",

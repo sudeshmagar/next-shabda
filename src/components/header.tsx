@@ -143,7 +143,7 @@ export function Header() {
                             </>
                         ) : (
                             <div className="space-y-2">
-                                <Link href="/auth/signin" onClick={() => setMobileMenuOpen(false)}>
+                                <Link href="/signin" onClick={() => setMobileMenuOpen(false)}>
                                     <Button variant="ghost" className="w-full">
                                         Sign In
                                     </Button>
