@@ -1,0 +1,27 @@
+meta {
+  name: Get Word by ID
+  type: http
+  seq: 2
+}
+
+docs {
+  # Get Word by ID API
+  
+  This endpoint allows you to retrieve a specific word by its ID.
+  
+  ## Path Parameters
+  - `id` (string): The ID of the word to retrieve
+  
+  ## Response
+  Returns the word object with all its details.
+}
+
+get {
+  url: {{baseUrl}}/api/word/{{wordId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+} 

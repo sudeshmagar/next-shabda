@@ -1,0 +1,43 @@
+meta {
+  name: User Signin
+  type: http
+  seq: 2
+}
+
+docs {
+  # User Signin API
+  
+  This endpoint allows users to sign in with email and password.
+  
+  ## Request Body
+  - `email` (string): User's email address
+  - `password` (string): User's password
+  
+  ## Response
+  Returns a session token that should be used for authenticated requests.
+  
+  ## Usage Example
+  ```json
+  {
+    "email": "john@example.com",
+    "password": "password123"
+  }
+  ```
+}
+
+post {
+  url: {{baseUrl}}/api/auth/signin/credentials
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "john@example.com",
+    "password": "password123"
+  }
+}
+
+headers {
+  Content-Type: application/json
+} 

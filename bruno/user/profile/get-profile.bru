@@ -1,0 +1,27 @@
+meta {
+  name: Get User Profile
+  type: http
+  seq: 4
+}
+
+docs {
+  # Get User Profile API
+  
+  This endpoint allows users to get their profile information.
+  
+  ## Authentication
+  Requires user authentication. Set the `userAuthToken` environment variable with a valid user session token.
+  
+  ## Response
+  Returns the user's profile information (without password).
+}
+
+get {
+  url: {{baseUrl}}/api/users/profile
+  body: none
+  auth: bearer {{userAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+} 

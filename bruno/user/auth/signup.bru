@@ -1,0 +1,46 @@
+meta {
+  name: User Signup
+  type: http
+  seq: 1
+}
+
+docs {
+  # User Signup API
+  
+  This endpoint allows users to create a new account.
+  
+  ## Request Body
+  - `name` (string): User's full name
+  - `email` (string): User's email address
+  - `password` (string): User's password (min 6 characters)
+  
+  ## Response
+  Returns the created user object (without password).
+  
+  ## Usage Example
+  ```json
+  {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "password123"
+  }
+  ```
+}
+
+post {
+  url: {{baseUrl}}/api/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "password123"
+  }
+}
+
+headers {
+  Content-Type: application/json
+} 

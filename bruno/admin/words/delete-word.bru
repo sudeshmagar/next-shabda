@@ -1,0 +1,30 @@
+meta {
+  name: Delete Word
+  type: http
+  seq: 3
+}
+
+docs {
+  # Delete Word API (Admin Only)
+  
+  This endpoint allows administrators to delete a word from the dictionary.
+  
+  ## Authentication
+  Requires admin authentication. Set the `authToken` environment variable with a valid admin session token.
+  
+  ## Query Parameters
+  - `id` (string): The ID of the word to delete
+  
+  ## Response
+  Returns a success message if the word was deleted.
+}
+
+delete {
+  url: {{baseUrl}}/api/word/delete?id={{wordId}}
+  body: none
+  auth: bearer {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+} 

@@ -1,0 +1,45 @@
+meta {
+  name: Search Words
+  type: http
+  seq: 1
+}
+
+docs {
+  # Search Words API
+  
+  This endpoint allows you to search for Nepali words in the dictionary.
+  
+  ## Request Body
+  - `search` (string optional): The search term to look for (blank "" searches for all words within the limit)
+  - `limit` (number optional): Maximum number of results to return 1-100 (default: 10)
+  - `page` (number optional): Current page number
+  
+  ## Response
+  Returns an array of matching words with their definitions, pronunciations, and examples.
+  
+  ## Example Usage
+  Search for words containing "namaste":
+  ```json
+  {
+    "search": "namaste",
+    "limit": 5
+  }
+  ```
+}
+
+post {
+  url: {{baseUrl}}/api/words
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "search": "example",
+    "limit": 10
+  }
+}
+
+headers {
+  Content-Type: application/json
+}

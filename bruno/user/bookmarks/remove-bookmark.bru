@@ -1,0 +1,43 @@
+meta {
+  name: Remove Bookmark
+  type: http
+  seq: 7
+}
+
+docs {
+  # Remove Bookmark API
+  
+  This endpoint allows users to remove a word from their bookmarks.
+  
+  ## Authentication
+  Requires user authentication. Set the `userAuthToken` environment variable with a valid user session token.
+  
+  ## Request Body
+  - `wordId` (string): The ID of the word to remove from bookmarks
+  
+  ## Response
+  Returns a success message when the bookmark is removed.
+  
+  ## Usage Example
+  ```json
+  {
+    "wordId": "507f1f77bcf86cd799439011"
+  }
+  ```
+}
+
+post {
+  url: {{baseUrl}}/api/bookmarks/remove
+  body: json
+  auth: bearer {{userAuthToken}}
+}
+
+body:json {
+  {
+    "wordId": "507f1f77bcf86cd799439011"
+  }
+}
+
+headers {
+  Content-Type: application/json
+} 

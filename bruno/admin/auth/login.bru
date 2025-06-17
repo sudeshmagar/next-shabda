@@ -1,0 +1,38 @@
+meta {
+  name: Admin Login
+  type: http
+  seq: 0
+}
+
+docs {
+  # Admin Login API
+  
+  This endpoint allows administrators to login and get an authentication token.
+  
+  ## Request Body
+  - `email` (string): Admin email address
+  - `password` (string): Admin password
+  
+  ## Response
+  Returns a session token that should be used for admin operations.
+  
+  ## Usage
+  After successful login, copy the session token and set it as the `authToken` environment variable.
+}
+
+post {
+  url: {{baseUrl}}/api/auth/signin/credentials
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "admin@example.com",
+    "password": "adminpassword"
+  }
+}
+
+headers {
+  Content-Type: application/json
+} 

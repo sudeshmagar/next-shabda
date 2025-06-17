@@ -1,0 +1,29 @@
+meta {
+  name: Get Random Word
+  type: http
+  seq: 3
+}
+
+docs {
+  # Get Word by ID
+
+  This endpoint allows you to get random words and it's details
+
+
+
+  ## Response
+  Returns the word object with all its details
+  
+
+  
+}
+
+get {
+  url: {{baseUrl}}/api/words/random
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+} 

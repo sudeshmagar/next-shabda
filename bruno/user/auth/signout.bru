@@ -1,0 +1,27 @@
+meta {
+  name: User Signout
+  type: http
+  seq: 3
+}
+
+docs {
+  # User Signout API
+  
+  This endpoint allows users to sign out and invalidate their session.
+  
+  ## Authentication
+  Requires user authentication. Set the `userAuthToken` environment variable with a valid user session token.
+  
+  ## Response
+  Returns a success message when the user is signed out.
+}
+
+post {
+  url: {{baseUrl}}/api/auth/signout
+  body: none
+  auth: bearer {{userAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+} 

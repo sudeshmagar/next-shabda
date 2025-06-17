@@ -1,0 +1,88 @@
+meta {
+  name: Update Word
+  type: http
+  seq: 2
+}
+
+docs {
+  # Update Word API (Admin Only)
+  
+  This endpoint allows administrators to update an existing word in the dictionary.
+  
+  ## Authentication
+  Requires admin authentication. Set the `authToken` environment variable with a valid admin session token.
+  
+  ## Query Parameters
+  - `id` (string): The ID of the word to update
+  
+  ## Request Body
+  - `word` (string optional): The Nepali word
+  - `romanized` (string optional): Romanized version of the word
+  - `english` (string optional): English translation
+  - `definitions` (array optional): Array of definitions
+  - `grammar` (string optional)
+  - `etimology` (string optional)
+  - `senses` (object optional): object of meanings
+  - `examples` (object optional): object of examples
+  - `synonyms` (object optional)
+  - `antonyms` (object optional)
+  
+  ## Response
+  Returns the updated word object.
+
+  ## Usage Example
+
+  ```
+  {
+    "word": "नमस्ते",
+    "romanized": "namaste",
+    "english": "hello",
+    "definitions": [
+        {
+        "grammar": "noun",
+        "etymology": "Sanskrit नमस्ते",
+        "senses": {
+            "nepali": ["अभिवादन"],
+            "english": ["greeting"]
+        },
+        "examples": {
+            "nepali": ["नमस्ते भन्नुहोस्"],
+            "english": ["Say hello"]
+        },
+        "synonyms": {
+            "nepali": ["स्वागत"],
+            "english": ["hi"]
+        },
+        "antonyms": {
+            "nepali": ["अलविदा"],
+            "english": ["goodbye"]
+        }
+        }
+    ]
+  }
+  ```
+}
+
+put {
+  url: {{baseUrl}}/api/word/update?id={{wordId}}
+  body: json
+  auth: bearer {{authToken}}
+}
+
+body:json {
+  {
+  "english": "hello, hi",
+    "definitions": [
+      {
+        "senses": {
+          "nepali": [],
+          "english": ["A greeting used to say hello or hi"]
+        }
+      }
+    ]
+  }
+}
+
+headers {
+  Content-Type: application/json
+} 
