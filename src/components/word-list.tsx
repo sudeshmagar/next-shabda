@@ -14,6 +14,11 @@ interface WordListProps {
 export function WordList({entries, loading, onRemoveBookmark}: WordListProps) {
     const Masonry = dynamic(() => import('react-masonry-css'), { ssr: false})
 
+    const breakpointColumnsObj = {
+        default: 2,
+        768: 1
+    }
+
     if (loading && entries.length === 0) {
         return (
             <div className="flex flex-col gap-4">
@@ -36,7 +41,7 @@ export function WordList({entries, loading, onRemoveBookmark}: WordListProps) {
 
     return (
         <>
-            <Masonry breakpointCols={2}
+            <Masonry breakpointCols={breakpointColumnsObj}
                      className="flex">
                 {entries.map((entry, index) => (
                     <motion.div

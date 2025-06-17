@@ -20,6 +20,8 @@ export interface Definition {
         nepali: string[];
         english: string[];
     };
+    synonyms?: string[];
+    antonyms?: string[];
 }
 
 export interface FormDefinition {
@@ -33,6 +35,8 @@ export interface FormDefinition {
         nepali: string[];
         english: string[];
     };
+    synonyms?: string[];
+    antonyms?: string[];
 }
 
 export interface DictionaryEntry {

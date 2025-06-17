@@ -5,18 +5,22 @@ import { useParams, useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Definition, FormDefinition, WordForm, ApiWordResponse, Language, DefinitionField } from "@/lib/types";
+import { Definition, FormDefinition, WordForm, Language, DefinitionField } from "@/lib/types";
+import { WordSuggestionInput } from "@/components/word-suggestion-input";
 
 export default function EditWordPage() {
     const { id } = useParams();
     const router = useRouter();
     const [form, setForm] = useState<WordForm | null>(null);
+    const [suggestionInputs, setSuggestionInputs] = useState<{
+        [key: string]: string;
+    }>({});
 
     useEffect(() => {
         if (!id) return;
-        fetch(`/api/words/${id}`)
+        fetch(`/api/word/${id}`)
             .then((res) => res.json())
-            .then((data: ApiWordResponse) => {
+            .then((data) => {
                 setForm({
                     word: data.word || "",
                     romanized: data.romanized || "",
@@ -33,6 +37,8 @@ export default function EditWordPage() {
                             nepali: (def.examples?.nepali || [""]).map((e) => e || ""),
                             english: (def.examples?.english || [""]).map((e) => e || ""),
                         },
+                        synonyms: (def.synonyms || [""]).map((s) => s || ""),
+                        antonyms: (def.antonyms || [""]).map((a) => a || ""),
                     })),
                 });
             });
@@ -62,6 +68,9 @@ export default function EditWordPage() {
     ) => {
         if (!form) return;
         const updated = [...form.definitions];
+        if (!updated[defIndex][field]) {
+            updated[defIndex][field] = { nepali: [""], english: [""] };
+        }
         updated[defIndex][field][lang][index] = value;
         setForm({
             ...form,
@@ -76,6 +85,9 @@ export default function EditWordPage() {
     ) => {
         if (!form) return;
         const updated = [...form.definitions];
+        if (!updated[defIndex][field]) {
+            updated[defIndex][field] = { nepali: [""], english: [""] };
+        }
         updated[defIndex][field][lang].push("");
         setForm({
             ...form,
@@ -91,7 +103,9 @@ export default function EditWordPage() {
     ) => {
         if (!form) return;
         const updated = [...form.definitions];
-        updated[defIndex][field][lang].splice(index, 1);
+        if (updated[defIndex][field]) {
+            updated[defIndex][field][lang].splice(index, 1);
+        }
         setForm({
             ...form,
             definitions: updated,
@@ -104,6 +118,8 @@ export default function EditWordPage() {
             etymology: "",
             senses: { nepali: [""], english: [""] },
             examples: { nepali: [""], english: [""] },
+            synonyms: [""],
+            antonyms: [""],
         };
         setForm((prev) => prev ? { ...prev, definitions: [...prev.definitions, newDef] } : prev);
     };
@@ -112,11 +128,29 @@ export default function EditWordPage() {
         e.preventDefault();
         if (!form) return;
         
+        // Clean up empty strings from arrays before submitting
+        const cleanedForm = {
+            ...form,
+            definitions: form.definitions.map(def => ({
+                ...def,
+                senses: {
+                    nepali: def.senses.nepali.filter(s => s.trim() !== ""),
+                    english: def.senses.english.filter(s => s.trim() !== ""),
+                },
+                examples: {
+                    nepali: def.examples.nepali.filter(e => e.trim() !== ""),
+                    english: def.examples.english.filter(e => e.trim() !== ""),
+                },
+                synonyms: def.synonyms?.filter(s => s.trim() !== "") || [],
+                antonyms: def.antonyms?.filter(a => a.trim() !== "") || [],
+            }))
+        };
+        
         try {
-            const response = await fetch(`/api/words/${id}`, {
+            const response = await fetch(`/api/word/update?id=${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(form),
+                body: JSON.stringify(cleanedForm),
             });
             
             if (!response.ok) {
@@ -245,6 +279,154 @@ export default function EditWordPage() {
                                         </Button>
                                     </div>
                                 ))}
+
+                                <div>
+                                    <h4 className="font-semibold mb-2 capitalize text-green-600">Synonyms</h4>
+                                    
+                                    {/* Existing synonyms */}
+                                    {def.synonyms?.map((synonym: string, i: number) => (
+                                        <div key={i} className="flex gap-2 mb-1">
+                                            <Input
+                                                value={synonym}
+                                                onChange={(e) => {
+                                                    if (!form) return;
+                                                    const updated = [...form.definitions];
+                                                    updated[defIndex].synonyms![i] = e.target.value;
+                                                    setForm({ ...form, definitions: updated });
+                                                }}
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                onClick={() => {
+                                                    if (!form) return;
+                                                    const updated = [...form.definitions];
+                                                    updated[defIndex].synonyms!.splice(i, 1);
+                                                    setForm({ ...form, definitions: updated });
+                                                }}
+                                            >
+                                                ×
+                                            </Button>
+                                        </div>
+                                    ))}
+
+                                    {/* Suggestion input for new synonyms */}
+                                    <div className="mb-2">
+                                        <WordSuggestionInput
+                                            value={suggestionInputs[`${defIndex}-synonyms`] || ""}
+                                            onChange={(value) => {
+                                                const key = `${defIndex}-synonyms`;
+                                                setSuggestionInputs(prev => ({ ...prev, [key]: value }));
+                                            }}
+                                            onAdd={(word) => {
+                                                if (!form) return;
+                                                const updated = [...form.definitions];
+                                                if (!updated[defIndex].synonyms) {
+                                                    updated[defIndex].synonyms = [];
+                                                }
+                                                if (!updated[defIndex].synonyms!.includes(word)) {
+                                                    updated[defIndex].synonyms!.push(word);
+                                                }
+                                                setForm({ ...form, definitions: updated });
+                                                
+                                                // Clear the suggestion input
+                                                const key = `${defIndex}-synonyms`;
+                                                setSuggestionInputs(prev => ({ ...prev, [key]: "" }));
+                                            }}
+                                            placeholder="Type to search for synonyms..."
+                                        />
+                                    </div>
+
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            if (!form) return;
+                                            const updated = [...form.definitions];
+                                            if (!updated[defIndex].synonyms) {
+                                                updated[defIndex].synonyms = [];
+                                            }
+                                            updated[defIndex].synonyms!.push("");
+                                            setForm({ ...form, definitions: updated });
+                                        }}
+                                    >
+                                        + Add Synonym
+                                    </Button>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-semibold mb-2 capitalize text-red-600">Antonyms</h4>
+                                    
+                                    {/* Existing antonyms */}
+                                    {def.antonyms?.map((antonym: string, i: number) => (
+                                        <div key={i} className="flex gap-2 mb-1">
+                                            <Input
+                                                value={antonym}
+                                                onChange={(e) => {
+                                                    if (!form) return;
+                                                    const updated = [...form.definitions];
+                                                    updated[defIndex].antonyms![i] = e.target.value;
+                                                    setForm({ ...form, definitions: updated });
+                                                }}
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                onClick={() => {
+                                                    if (!form) return;
+                                                    const updated = [...form.definitions];
+                                                    updated[defIndex].antonyms!.splice(i, 1);
+                                                    setForm({ ...form, definitions: updated });
+                                                }}
+                                            >
+                                                ×
+                                            </Button>
+                                        </div>
+                                    ))}
+
+                                    {/* Suggestion input for new antonyms */}
+                                    <div className="mb-2">
+                                        <WordSuggestionInput
+                                            value={suggestionInputs[`${defIndex}-antonyms`] || ""}
+                                            onChange={(value) => {
+                                                const key = `${defIndex}-antonyms`;
+                                                setSuggestionInputs(prev => ({ ...prev, [key]: value }));
+                                            }}
+                                            onAdd={(word) => {
+                                                if (!form) return;
+                                                const updated = [...form.definitions];
+                                                if (!updated[defIndex].antonyms) {
+                                                    updated[defIndex].antonyms = [];
+                                                }
+                                                if (!updated[defIndex].antonyms!.includes(word)) {
+                                                    updated[defIndex].antonyms!.push(word);
+                                                }
+                                                setForm({ ...form, definitions: updated });
+                                                
+                                                // Clear the suggestion input
+                                                const key = `${defIndex}-antonyms`;
+                                                setSuggestionInputs(prev => ({ ...prev, [key]: "" }));
+                                            }}
+                                            placeholder="Type to search for antonyms..."
+                                        />
+                                    </div>
+
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            if (!form) return;
+                                            const updated = [...form.definitions];
+                                            if (!updated[defIndex].antonyms) {
+                                                updated[defIndex].antonyms = [];
+                                            }
+                                            updated[defIndex].antonyms!.push("");
+                                            setForm({ ...form, definitions: updated });
+                                        }}
+                                    >
+                                        + Add Antonym
+                                    </Button>
+                                </div>
                             </div>
                         ))}
 

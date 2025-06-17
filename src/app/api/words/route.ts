@@ -69,18 +69,3 @@ export async function POST(req: Request) {
     }
 }
 
-//create
-export async function PUT(req: Request) {
-    await dbConnect();
-    const Word = (await import("@/models/Word")).default;
-    const body: Partial<DictionaryEntry> = await req.json();
-
-    try {
-        const newWord = await Word.create(body);
-        return NextResponse.json(newWord, { status: 201 });
-    } catch (error) {
-        console.error("Error creating word", error);
-        return NextResponse.json({ error: "Failed to create word." }, { status: 400 });
-    }
-}
-

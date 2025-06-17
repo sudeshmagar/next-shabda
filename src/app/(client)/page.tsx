@@ -1,12 +1,12 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Pagination,
     PaginationContent,
-    PaginationEllipsis,
     PaginationItem,
     PaginationNext,
     PaginationPrevious
@@ -20,9 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { SearchBar } from "@/components/search-bar";
 import React from "react";
 
-
-export default function HomePage() {
-
+function HomePageContent() {
     const [words, setWords] = useState<DictionaryEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -30,9 +28,19 @@ export default function HomePage() {
     const [total, setTotal] = useState(0);
     const [refreshing, setRefreshing] = useState(false);
     const [wordOfTheDay, setWordOfTheDay] = useState<DictionaryEntry | null>(null);
+    const searchParams = useSearchParams();
 
     // Calculate total pages
     const totalPages = Math.ceil(total / 10);
+
+    // Check for search query parameter on component mount
+    useEffect(() => {
+        const query = searchParams.get('q');
+        if (query) {
+            setSearch(query);
+            setPage(1);
+        }
+    }, [searchParams]);
 
     const handleSearch = useCallback(async (query: string) => {
         setSearch(query);
@@ -40,11 +48,21 @@ export default function HomePage() {
         setWords([]);
     }, []);
 
+    // Handle page change
+    const handlePageChange = (newPage: number) => {
+        if (newPage >= 1 && newPage <= Math.ceil(total / 10)) {
+            setPage(newPage);
+            setWords([]); // Clear words immediately when changing pages
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
     // Fetch Words
     useEffect(() => {
         const fetchWords = async () => {
             try {
                 setLoading(true);
+                setWords([]); // Clear words at the start of each fetch
                 const response = await fetch("/api/words", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -107,14 +125,6 @@ export default function HomePage() {
         return () => clearInterval(interval);
     }, []);
 
-    // Handle page change
-    const handlePageChange = (newPage: number) => {
-        if (newPage >= 1 && newPage <= Math.ceil(total / 10)) {
-            setPage(newPage);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    };
-
     // Generate page numbers to display
     const generatePageNumbers = () => {
         const pages: number[] = [];
@@ -127,7 +137,7 @@ export default function HomePage() {
         } else {
             // Calculate the range of pages to show
             let startPage = Math.max(1, page - 2);
-            const endPage = Math.min(totalPages, startPage + 4);
+            const endPage = Math.min(startPage + 4, totalPages);
 
             // Adjust start page if we're near the end
             if (endPage === totalPages) {
@@ -155,7 +165,7 @@ export default function HomePage() {
             </section>
 
             {/* Search Section */}
-            <section className="container mx-auto px-4 max-w-3xl">
+            <section className="container mx-auto px-4 max-w-4xl">
                 <SearchBar onSearch={handleSearch} loading={loading} />
             </section>
 
@@ -285,7 +295,7 @@ export default function HomePage() {
                             <PaginationItem>
                                 <PaginationPrevious
                                     onClick={() => handlePageChange(page - 1)}
-                                    className={page === 1 ? "pointer-events-none opacity-50" : "hover:bg-primary/10 cursor-pointer"}
+                                    className={page === 1 ? "pointer-events-none opacity-50" : "hover:bg-primary/10"}
                                 />
                             </PaginationItem>
 
@@ -327,7 +337,9 @@ export default function HomePage() {
                                     {index === array.length - 1 && pageNum < totalPages && (
                                         <>
                                             {pageNum < totalPages - 1 && (
-                                                <PaginationEllipsis />
+                                                <PaginationItem>
+                                                    <span className="px-4 py-2 text-muted-foreground">...</span>
+                                                </PaginationItem>
                                             )}
                                             <PaginationItem>
                                                 <Button
@@ -347,7 +359,7 @@ export default function HomePage() {
                             <PaginationItem>
                                 <PaginationNext
                                     onClick={() => handlePageChange(page + 1)}
-                                    className={page === totalPages ? "pointer-events-none opacity-50" : "hover:bg-primary/10 cursor-pointer"}
+                                    className={page === totalPages ? "pointer-events-none opacity-50" : "hover:bg-primary/10"}
                                 />
                             </PaginationItem>
                         </PaginationContent>
@@ -355,5 +367,20 @@ export default function HomePage() {
                 </section>
             )}
         </main>
+    );
+}
+
+export default function HomePage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading...</p>
+                </div>
+            </div>
+        }>
+            <HomePageContent />
+        </Suspense>
     );
 }

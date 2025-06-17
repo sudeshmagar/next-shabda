@@ -35,3 +35,59 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Server Error" }, { status: 500 });
     }
 }
+
+export async function POST(req: NextRequest) {
+    await dbConnect();
+    const Word = (await import("@/models/Word")).default;
+    
+    try {
+        const { words } = await req.json();
+        
+        if (!Array.isArray(words) || words.length === 0) {
+            return NextResponse.json({ error: "Words array is required" }, { status: 400 });
+        }
+
+        // Find words that match any of the provided words
+        const query = {
+            $or: [
+                { word: { $in: words } },
+                { romanized: { $in: words } },
+                { english: { $in: words } }
+            ]
+        };
+
+        const foundWords = await Word.find(query)
+            .select('_id word romanized english')
+            .limit(50)
+            .exec();
+
+        // Create a map for quick lookup
+        const wordMap = new Map();
+        foundWords.forEach(word => {
+            // Check for exact matches in word, romanized, and english fields
+            const wordLower = word.word?.toLowerCase();
+            const romanizedLower = word.romanized?.toLowerCase();
+            const englishLower = word.english?.toLowerCase();
+            
+            words.forEach(searchWord => {
+                const searchLower = searchWord.toLowerCase();
+                if (wordLower === searchLower || romanizedLower === searchLower || englishLower === searchLower) {
+                    wordMap.set(searchWord, {
+                        id: word._id,
+                        word: word.word,
+                        romanized: word.romanized,
+                        english: word.english
+                    });
+                }
+            });
+        });
+
+        return NextResponse.json({
+            suggestions: Object.fromEntries(wordMap)
+        });
+
+    } catch (error) {
+        console.error("Error fetching word suggestions:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
+}

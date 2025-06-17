@@ -13,6 +13,7 @@ import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { DictionaryEntry } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Thesaurus } from "@/components/thesaurus";
 
 function WordDetailSkeleton() {
     return (
@@ -93,7 +94,7 @@ export default function WordDetailPage() {
     useEffect(() => {
         const fetchWord = async () => {
             try {
-                const response = await fetch(`/api/words/${id}`);
+                const response = await fetch(`/api/word/${id}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch word');
                 }
@@ -271,6 +272,23 @@ export default function WordDetailPage() {
                         </Card>
                     ))}
                 </div>
+
+                {/* Thesaurus - Show for the first definition that has synonyms or antonyms */}
+                {word?.definitions?.map((definition, index) => {
+                    const hasSynonyms = definition.synonyms && (definition.synonyms?.length > 0 );
+                    const hasAntonyms = definition.antonyms && (definition.antonyms?.length > 0 );
+                    
+                    if (hasSynonyms || hasAntonyms) {
+                        return (
+                            <Thesaurus 
+                                key={`thesaurus-${index}`}
+                                synonyms={definition.synonyms}
+                                antonyms={definition.antonyms}
+                            />
+                        );
+                    }
+                    return null;
+                })}
             </div>
         </div>
     );

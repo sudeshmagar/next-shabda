@@ -47,7 +47,7 @@ export default function Dashboard() {
             const confirmed = confirm("Are you sure you want to delete this word?");
             if (!confirmed) return;
 
-            const res = await fetch(`/api/words/${id}`, {
+            const res = await fetch(`/api/word/delete?id=${id}`, {
                 method: "DELETE",
             });
             if (!res.ok) throw new Error();

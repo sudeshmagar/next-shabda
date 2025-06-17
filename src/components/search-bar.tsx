@@ -6,9 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {useSearchSuggestions} from "@/hooks/use-search-suggestion";
 import type { DictionaryEntry } from "@/lib/types"
-import {SearchSuggestions} from "@/components/search-suggestion";
-import { useDebounce } from "@/hooks/use-debounce"
-
+import {SearchSuggestion} from "@/components/search-suggestion";
+import { useRouter } from "next/navigation";
 
 interface SearchBarProps {
     onSearch: (query: string) => void
@@ -17,19 +16,22 @@ interface SearchBarProps {
 
 export function SearchBar({ onSearch, loading }: SearchBarProps) {
     const [query, setQuery] = useState("")
-    const [debouncedQuery] = useDebounce(query, 300)
     const [filter, setFilter] = useState<string | null>(null)
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [isFocused, setIsFocused] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
+    const router = useRouter()
 
     const { suggestions, getSuggestions, clearSuggestions } = useSearchSuggestions()
 
     // Handle input changes and get suggestions
     useEffect(() => {
         const cleanup = getSuggestions(query, filter || "")
-        setShowSuggestions(isFocused && (query.trim().length > 0 || filter !== null))
+        
+        // Show suggestions if there's a query, regardless of focus state
+        const shouldShowSuggestions = query.trim().length > 0 || filter !== null;
+        setShowSuggestions(shouldShowSuggestions);
 
         return cleanup
     }, [query, isFocused, filter, getSuggestions])
@@ -47,10 +49,6 @@ export function SearchBar({ onSearch, loading }: SearchBarProps) {
         return () => document.removeEventListener("mousedown", handleClickOutside)
     }, [])
 
-    useEffect(() => {
-        onSearch(debouncedQuery)
-    }, [debouncedQuery, onSearch])
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         if (query.trim()) {
@@ -61,11 +59,8 @@ export function SearchBar({ onSearch, loading }: SearchBarProps) {
     }
 
     const handleSuggestionSelect = (entry: DictionaryEntry) => {
-        setQuery(entry.word)
-        setFilter(null)
-        onSearch(entry.word)
-        setShowSuggestions(false)
-        inputRef.current?.blur()
+        // Navigate directly to the word detail page
+        router.push(`/words/${entry._id}`)
     }
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,9 +70,15 @@ export function SearchBar({ onSearch, loading }: SearchBarProps) {
 
     const handleInputFocus = () => {
         setIsFocused(true)
-        if (query.trim().length > 0) {
-            setShowSuggestions(true)
-        }
+        // Suggestions will be shown by the useEffect when there's a query
+    }
+
+    const handleInputBlur = () => {
+        // Don't immediately hide suggestions on blur to allow clicking on them
+        setTimeout(() => {
+            setIsFocused(false)
+            setShowSuggestions(false)
+        }, 200)
     }
 
     const handleClearSearch = () => {
@@ -87,10 +88,6 @@ export function SearchBar({ onSearch, loading }: SearchBarProps) {
         clearSuggestions()
         inputRef.current?.focus()
         onSearch("")
-    }
-
-    const handleCloseSuggestions = () => {
-        setShowSuggestions(false)
     }
 
     return (
@@ -105,6 +102,7 @@ export function SearchBar({ onSearch, loading }: SearchBarProps) {
                         value={query}
                         onChange={handleInputChange}
                         onFocus={handleInputFocus}
+                        onBlur={handleInputBlur}
                         className="pl-10 pr-10"
                         autoComplete="off"
                     />
@@ -125,10 +123,9 @@ export function SearchBar({ onSearch, loading }: SearchBarProps) {
                 </Button>
             </form>
 
-            <SearchSuggestions
+            <SearchSuggestion
                 suggestions={suggestions}
                 onSelect={handleSuggestionSelect}
-                onClose={handleCloseSuggestions}
                 visible={showSuggestions}
             />
         </div>

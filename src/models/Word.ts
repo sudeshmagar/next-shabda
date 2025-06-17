@@ -17,6 +17,8 @@ const WordSchema = new Schema({
                     nepali: [String],
                     english: [String],
                 },
+                synonyms: [String],
+                antonyms: [String],
             },
         ],
     },
