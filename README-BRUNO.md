@@ -6,7 +6,7 @@ This Bruno collection provides comprehensive API testing for the Shabda (शब�
 
 ## 🚀 Quick Start
 
-1. **Install Bruno**: Download from [bruno.com](https://www.bruno.com)
+1. **Install Bruno**: Download from [usebruno.com](https://www.usebruno.com)
 2. **Open Collection**: Open the `bruno` folder in Bruno
 3. **Set Environment**: Select the "Shabda" environment
 4. **Start Testing**: Begin with public endpoints, then authenticate for user/admin features
