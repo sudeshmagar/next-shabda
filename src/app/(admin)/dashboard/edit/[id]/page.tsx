@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Definition, FormDefinition, WordForm, Language, DefinitionField } from "@/lib/types";
 import { WordSuggestionInput } from "@/components/word-suggestion-input";
 
+
 export default function EditWordPage() {
     const { id } = useParams();
     const router = useRouter();

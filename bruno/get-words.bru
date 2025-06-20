@@ -4,6 +4,22 @@ meta {
   seq: 1
 }
 
+post {
+  url: {{baseUrl}}/api/words
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+  
+  }
+}
+
 docs {
   # Search Words API
   
@@ -25,21 +41,4 @@ docs {
     "limit": 5
   }
   ```
-}
-
-post {
-  url: {{baseUrl}}/api/words
-  body: json
-  auth: none
-}
-
-body:json {
-  {
-    "search": "example",
-    "limit": 10
-  }
-}
-
-headers {
-  Content-Type: application/json
 }

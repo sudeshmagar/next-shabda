@@ -47,6 +47,10 @@ export interface DictionaryEntry {
     phonetic?: string;
     definitions?: Definition[];
     createdBy?: string;
+    updatedBy?: string;
+    status?: 'draft' | 'pending' | 'approved' | 'rejected';
+    approvedBy?: string;
+    approvedAt?: Date;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -60,14 +64,27 @@ export interface Bookmark {
     createdAt: Date;
 }
 
+export type UserRole = 'user' | 'editor' | 'admin' | 'superadmin';
+export type Permission = 'create_words' | 'edit_words' | 'delete_words' | 'manage_users' | 'assign_roles' | 'view_analytics' | 'approve_words';
+
 export interface User {
     _id: string;
     email: string;
     name: string;
     password: string;
-    role?: "user" | "admin";
+    role?: UserRole;
     image?: string;
+    contributions?: {
+        wordsCreated: number;
+        wordsEdited: number;
+        wordsDeleted: number;
+        lastContribution?: Date;
+    };
+    assignedBy?: string;
+    assignedAt?: Date;
+    permissions?: Permission[];
     createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface WordForm {
@@ -84,3 +101,29 @@ export interface ApiWordResponse extends DictionaryEntry {
 
 export type Language = 'nepali' | 'english';
 export type DefinitionField = 'senses' | 'examples';
+
+// Dashboard analytics types
+export interface DashboardStats {
+    totalWords: number;
+    totalUsers: number;
+    pendingApprovals: number;
+    recentContributions: number;
+    userContributions: {
+        wordsCreated: number;
+        wordsEdited: number;
+        wordsDeleted: number;
+    };
+}
+
+export interface UserContribution {
+    _id: string;
+    name: string;
+    email: string;
+    role: UserRole;
+    contributions: {
+        wordsCreated: number;
+        wordsEdited: number;
+        wordsDeleted: number;
+        lastContribution?: Date;
+    };
+}

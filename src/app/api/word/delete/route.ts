@@ -2,16 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongoose";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
+import User from "@/models/User";
 
 export async function DELETE(req: NextRequest) {
-    // Check authentication and admin role
+    // Check authentication and role
     const session = await getServerSession(authOptions);
     if (!session?.user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
-    if (session.user.role !== "admin") {
-        return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    // Check if user has permission to delete words
+    const user = await User.findOne({ email: session.user.email });
+    if (!user || !['admin', 'superadmin'].includes(user.role)) {
+        return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
     }
 
     await dbConnect();
@@ -25,10 +28,23 @@ export async function DELETE(req: NextRequest) {
     }
 
     try {
-        const word = await Word.findByIdAndDelete(id);
+        // Check if word exists
+        const word = await Word.findById(id);
         if (!word) {
             return NextResponse.json({ error: "Word not found" }, { status: 404 });
         }
+
+        // Delete the word
+        await Word.findByIdAndDelete(id);
+
+        // Update user's contribution count
+        if (!user.contributions) {
+            user.contributions = { wordsCreated: 0, wordsEdited: 0, wordsDeleted: 0 };
+        }
+        user.contributions.wordsDeleted += 1;
+        user.contributions.lastContribution = new Date();
+        await user.save();
+
         return NextResponse.json({ message: "Word deleted successfully" });
     } catch (error) {
         console.error("Error deleting word:", error);

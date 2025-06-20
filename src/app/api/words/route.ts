@@ -2,6 +2,9 @@ import dbConnect from "@/lib/mongoose";
 import { NextResponse } from "next/server";
 import { DictionaryEntry } from "@/lib/types";
 import { FilterQuery } from "mongoose";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
+import User from "@/models/User";
 
 // Types for request parameters
 interface WordsRequestParams {
@@ -9,6 +12,7 @@ interface WordsRequestParams {
     limit?: number;
     page?: number;
     ids?: string[];
+    status?: string;
 }
 
 // Type for MongoDB query
@@ -19,11 +23,15 @@ export async function POST(req: Request) {
     await dbConnect();
     const Word = (await import("@/models/Word")).default;
 
-    const { search = "", limit = 10, page = 1, ids }: WordsRequestParams = await req.json();
-    console.log("Incoming request to /api/words with search:", search, "limit:", limit, "page:", page, "ids:", ids);
+    const { search = "", limit = 10, page = 1, ids, status }: WordsRequestParams = await req.json();
+    console.log("Incoming request to /api/words with search:", search, "limit:", limit, "page:", page, "ids:", ids, "status:", status);
 
     try {
         let query: WordsQuery = {};
+
+        // Check user session for role-based filtering
+        const session = await getServerSession(authOptions);
+        const user = session?.user ? await User.findOne({ email: session.user.email }) : null;
 
         if (ids && Array.isArray(ids) && ids.length > 0) {
             query = { _id: { $in: ids } };
@@ -36,6 +44,14 @@ export async function POST(req: Request) {
                     { english: { $regex: regex } },
                 ]
             };
+        }
+
+        // Add status filter if provided
+        if (status && status !== 'all') {
+            query.status = status;
+        } else if (!user || !['admin', 'editor', 'superadmin'].includes(user.role)) {
+            // Regular users only see approved words
+            query.status = 'approved';
         }
 
         const pageNum = Math.max(parseInt(String(page)), 1);
